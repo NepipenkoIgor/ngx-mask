@@ -58,7 +58,11 @@ type DateTimeField = {
     exportAs: 'mask,ngxMask',
 })
 export class NgxMaskDirective
-    implements ControlValueAccessor, OnChanges, Validator, FormValueControl<string>
+    implements
+        ControlValueAccessor,
+        OnChanges,
+        Validator,
+        FormValueControl<string | number | null | undefined>
 {
     // ===== Mask Configuration Inputs =====
     public mask = input<string | undefined | null>('');
@@ -90,7 +94,19 @@ export class NgxMaskDirective
     // config, so no ngOnChanges mirroring into the service is needed (#1435).
     public defaultValueOnBlur = input<NgxMaskConfig['defaultValueOnBlur']>(null);
 
-    public value = model<string>('');
+    /**
+     * Signal Forms `FormValueControl` surface. At runtime `FormField` never drives this model
+     * when the directive is bound (it prefers the `NG_VALUE_ACCESSOR` provided above, see
+     * `_isCvaMode`), but the template type-checker treats any directive owning a `value` model
+     * as the field's custom control and checks the bound field's value type against it (#1640).
+     * The model therefore accepts exactly what `writeValue()` accepts — `string | number | null |
+     * undefined` — so numeric and nullable fields (`signal({ amount: 0 })`,
+     * `signal<number | null>(null)`, `signal<string | null>(null)`) compile under
+     * `strictTemplates`. Values pushed back into the model are always the unmasked string (see
+     * `_propagateToValueModel`), i.e. `value()` / `valueChange` are declared wider than what is
+     * emitted.
+     */
+    public value = model<string | number | null | undefined>('');
     public disabled = input(false, { transform: booleanAttribute });
     public touched = model<boolean>(false);
 
