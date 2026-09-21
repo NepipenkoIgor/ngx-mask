@@ -30,6 +30,8 @@ npm-debug.log
 testem.log
 /typings
 /cypress/*
+!/cypress/support/
+!/cypress/fixture/
 .nx
 # e2e
 /e2e/*.js

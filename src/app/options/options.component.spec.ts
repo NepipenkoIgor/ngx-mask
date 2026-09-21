@@ -751,6 +751,20 @@ describe('Demo App - Other Cases', () => {
             expectedFormValue: '12,34',
             options: { decimalMarker: ',' },
         },
+        {
+            name: 'Percent with multiple decimalMarkers (comma typed)',
+            mask: 'percent.2',
+            testInput: '12,34',
+            expectedDisplay: '12,34',
+            options: { decimalMarker: ['.', ','] },
+        },
+        {
+            name: 'Percent with multiple decimalMarkers (dot typed)',
+            mask: 'percent.2',
+            testInput: '12.34',
+            expectedDisplay: '12.34',
+            options: { decimalMarker: ['.', ','] },
+        },
     ];
 
     describe('Reactive Forms', () => {
