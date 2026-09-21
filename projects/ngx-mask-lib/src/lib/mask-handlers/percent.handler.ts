@@ -15,10 +15,9 @@ export const percentHandler: MaskHandlerFn = function (state, params) {
         processedValue = this._stripToDecimal(processedValue);
         const precision: number = this.getPrecision(state.maskExpression);
 
-        processedValue = this.checkInputPrecision(processedValue, precision, this.decimalMarker);
+        processedValue = this.checkInputPrecision(processedValue, precision);
     }
-    const decimalMarker =
-        typeof this.decimalMarker === 'string' ? this.decimalMarker : MaskExpression.DOT;
+    const decimalMarker = this._activeDecimalMarker(processedValue);
     if (
         processedValue.indexOf(decimalMarker) > 0 &&
         !this.percentage(processedValue.substring(0, processedValue.indexOf(decimalMarker)))

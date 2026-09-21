@@ -19,6 +19,7 @@
         "LICENSE",
         "README.md",
         "fesm2022/ngx-mask.mjs",
+        "fesm2022/ngx-mask.mjs.map",
         "types",
         "package.json"
     ],

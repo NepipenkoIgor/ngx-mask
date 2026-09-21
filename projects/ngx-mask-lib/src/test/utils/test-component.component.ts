@@ -62,7 +62,7 @@ export class TestMaskComponent {
     );
     public decimalMarker = signal<NgxMaskConfig['decimalMarker']>(this._config.decimalMarker);
     public showMaskTyped = signal<NgxMaskConfig['showMaskTyped']>(this._config.showMaskTyped);
-    public placeHolderCharacter = signal<NgxMaskConfig['placeHolderCharacter']>(
+    public placeHolderCharacter = signal<NgxMaskConfig['placeHolderCharacter'] | null>(
         this._config.placeHolderCharacter
     );
     public validation = signal<NgxMaskConfig['validation']>(this._config.validation);

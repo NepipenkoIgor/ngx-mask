@@ -856,7 +856,10 @@ export class NgxMaskService extends NgxMaskApplierService {
     private _removeMask(value: string, specialCharactersForRemove: string[]): string {
         if (
             this.maskExpression.startsWith(MaskExpression.PERCENT) &&
-            value.includes(MaskExpression.DOT)
+            (value.includes(MaskExpression.DOT) ||
+                (Array.isArray(this.decimalMarker) &&
+                    value.includes(MaskExpression.COMMA) &&
+                    this._activeDecimalMarker(value) === MaskExpression.COMMA))
         ) {
             return value;
         }
@@ -935,7 +938,7 @@ export class NgxMaskService extends NgxMaskApplierService {
 
         if (
             this.maskExpression.startsWith(MaskExpression.PERCENT) &&
-            this.decimalMarker === MaskExpression.COMMA
+            this._activeDecimalMarker(processedResult) === MaskExpression.COMMA
         ) {
             processedResult = processedResult.replace(MaskExpression.COMMA, MaskExpression.DOT);
         }
