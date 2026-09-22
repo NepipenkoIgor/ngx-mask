@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en" data-beasties-container="">
-    <head><meta http-equiv="Content-Security-Policy" content="script-src 'strict-dynamic' 'sha256-ErSGQ5RkfdaGFyDT7yi/vnakQoxNloHzsJR8SRc4ISE=' 'sha256-fqP7CqcgcB9heQppNtSpgbJU42eGh+43Jqg6ZmzsSbE=' https: 'unsafe-inline';object-src 'none';base-uri 'self';">
+    <head><meta http-equiv="Content-Security-Policy" content="script-src 'strict-dynamic' 'sha256-ErSGQ5RkfdaGFyDT7yi/vnakQoxNloHzsJR8SRc4ISE=' 'sha256-exvFTUrVmXGSJrvWLDiZ2kk7e/DVR8Vws7gZUcImBXc=' https: 'unsafe-inline';object-src 'none';base-uri 'self';">
         <meta charset="utf-8">
         <title>Ngx Mask</title>
         <base href="/ngx-mask/">
@@ -35,15 +35,22 @@
 })();</script><link rel="stylesheet" href="styles-EIZUHMEG.css" media="print" ngcspmedia="all"><noscript><link rel="stylesheet" href="styles-EIZUHMEG.css"></noscript></head>
     <body>
         <ngxd-root></ngxd-root>
-    <script>
-  var scripts = [['main-K2K765SJ.js', 'module', false, false]];
+    <script>(() => {
+  const scripts = [['main-5XTZYOKF.js', 'module', false, false, null, null]];
   scripts.forEach(function(scriptUrl) {
-    var s = document.createElement('script');
+    const s = document.createElement('script');
     s.src = scriptUrl[0];
     s.type = scriptUrl[1];
-    s.async = !!scriptUrl[2];
-    s.defer = !!scriptUrl[3];
+    s.async = scriptUrl[2];
+    s.defer = scriptUrl[3];
+    if (scriptUrl[4]) {
+      s.integrity = scriptUrl[4];
+    }
+    if (scriptUrl[5]) {
+      s.crossOrigin = scriptUrl[5];
+    }
     document.lastElementChild.appendChild(s);
   });
+})();
 </script></body>
 </html>
