@@ -414,25 +414,13 @@ export class NgxMaskApplierService {
         return inputValue;
     };
 
-    protected checkInputPrecision = (
-        inputValue: string,
-        precision: number,
-        decimalMarker: NgxMaskConfig['decimalMarker']
-    ): string => {
+    protected checkInputPrecision = (inputValue: string, precision: number): string => {
         let processedInputValue = inputValue;
-        let processedDecimalMarker = decimalMarker;
 
         if (precision < Infinity) {
-            // With an array decimalMarker (default ['.', ',']), pick the first configured
-            // marker that isn't also the thousandSeparator — mirrors the same fallback
-            // resolution used in separator.handler.ts (no marker typed yet in this value).
-            if (Array.isArray(processedDecimalMarker)) {
-                const marker = processedDecimalMarker.find((dm) => dm !== this.thousandSeparator);
-
-                processedDecimalMarker = marker ? marker : processedDecimalMarker[0];
-            }
+            const decimalMarker = this._activeDecimalMarker(inputValue);
             const precisionRegEx = new RegExp(
-                this._charToRegExpExpression(processedDecimalMarker) + `\\d{${precision}}.*$`
+                this._charToRegExpExpression(decimalMarker) + `\\d{${precision}}.*$`
             );
             const precisionMatch: RegExpMatchArray | null =
                 processedInputValue.match(precisionRegEx);
@@ -449,7 +437,7 @@ export class NgxMaskApplierService {
                 precision === 0 &&
                 this._compareOrIncludes(
                     processedInputValue[processedInputValue.length - 1],
-                    processedDecimalMarker,
+                    decimalMarker,
                     this.thousandSeparator
                 )
             ) {
@@ -516,14 +504,27 @@ export class NgxMaskApplierService {
         );
     }
 
+    /**
+     * The single rule for "which decimal marker is active": the configured marker, or — for an
+     * array — the first configured marker present in `value` that is not the thousandSeparator,
+     * else the first configured marker that is not the thousandSeparator (#1653).
+     */
+    protected _activeDecimalMarker(value: string): DecimalMarkerChar {
+        if (!Array.isArray(this.decimalMarker)) {
+            return this.decimalMarker;
+        }
+        const candidates = this.decimalMarker.filter((dm) => dm !== this.thousandSeparator);
+        return (
+            candidates.find((dm) => value.includes(dm)) ?? candidates[0] ?? this.decimalMarker[0]
+        );
+    }
+
     protected _splitPercentZero(value: string): string {
         if (value === MaskExpression.MINUS && this.allowNegativeNumbers) {
             return value;
         }
-        const decimalIndex =
-            typeof this.decimalMarker === 'string'
-                ? value.indexOf(this.decimalMarker)
-                : value.indexOf(MaskExpression.DOT);
+        const decimal = this._activeDecimalMarker(value);
+        const decimalIndex = value.indexOf(decimal);
         const emptyOrMinus =
             this.allowNegativeNumbers && value.includes(MaskExpression.MINUS) ? '-' : '';
         if (decimalIndex === -1) {
@@ -535,9 +536,6 @@ export class NgxMaskApplierService {
             const integerPart = parseInt(value.replace('-', '').substring(0, decimalIndex), 10);
             const decimalPart = value.substring(decimalIndex + 1);
             const integerString = isNaN(integerPart) ? '' : integerPart.toString();
-
-            const decimal =
-                typeof this.decimalMarker === 'string' ? this.decimalMarker : MaskExpression.DOT;
 
             return integerString === MaskExpression.EMPTY_STRING
                 ? MaskExpression.EMPTY_STRING

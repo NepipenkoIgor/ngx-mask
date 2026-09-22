@@ -23,6 +23,8 @@ export const enum MaskExpression {
     SECOND = 's',
     LETTER_S = 'S',
     DOT = '.',
+    NUMPAD_DECIMAL = 'Decimal',
+    NUMPAD_DECIMAL_CODE = 'NumpadDecimal',
     COMMA = ',',
     CURLY_BRACKETS_LEFT = '{',
     CURLY_BRACKETS_RIGHT = '}',

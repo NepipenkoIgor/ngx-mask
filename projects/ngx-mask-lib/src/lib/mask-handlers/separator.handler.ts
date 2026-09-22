@@ -40,17 +40,7 @@ export const separatorHandler: MaskHandlerFn = function (state, params) {
     let decimalMarker = this.decimalMarker;
 
     if (Array.isArray(this.decimalMarker)) {
-        if (
-            this.actualValue.includes(this.decimalMarker[0]) ||
-            this.actualValue.includes(this.decimalMarker[1])
-        ) {
-            decimalMarker = this.actualValue.includes(this.decimalMarker[0])
-                ? this.decimalMarker[0]
-                : this.decimalMarker[1];
-        } else {
-            decimalMarker = this.decimalMarker.find((dm) => dm !== this.thousandSeparator) as
-                '.' | ',';
-        }
+        decimalMarker = this._activeDecimalMarker(this.actualValue);
     }
 
     // Issues #733/#1414/#1315: opt-in "banking" typing mode — typed digits fill
@@ -288,7 +278,7 @@ export const separatorHandler: MaskHandlerFn = function (state, params) {
         processedValue = processedValue.substring(0, processedValue.length - 1);
     }
 
-    processedValue = this.checkInputPrecision(processedValue, precision, this.decimalMarker);
+    processedValue = this.checkInputPrecision(processedValue, precision);
     const strForSep: string = processedValue.replace(
         new RegExp(thousandSeparatorCharEscaped, 'g'),
         ''

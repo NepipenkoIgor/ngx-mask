@@ -58,7 +58,11 @@ type DateTimeField = {
     exportAs: 'mask,ngxMask',
 })
 export class NgxMaskDirective
-    implements ControlValueAccessor, OnChanges, Validator, FormValueControl<string>
+    implements
+        ControlValueAccessor,
+        OnChanges,
+        Validator,
+        FormValueControl<string | number | null | undefined>
 {
     // ===== Mask Configuration Inputs =====
     public mask = input<string | undefined | null>('');
@@ -90,7 +94,19 @@ export class NgxMaskDirective
     // config, so no ngOnChanges mirroring into the service is needed (#1435).
     public defaultValueOnBlur = input<NgxMaskConfig['defaultValueOnBlur']>(null);
 
-    public value = model<string>('');
+    /**
+     * Signal Forms `FormValueControl` surface. At runtime `FormField` never drives this model
+     * when the directive is bound (it prefers the `NG_VALUE_ACCESSOR` provided above, see
+     * `_isCvaMode`), but the template type-checker treats any directive owning a `value` model
+     * as the field's custom control and checks the bound field's value type against it (#1640).
+     * The model therefore accepts exactly what `writeValue()` accepts — `string | number | null |
+     * undefined` — so numeric and nullable fields (`signal({ amount: 0 })`,
+     * `signal<number | null>(null)`, `signal<string | null>(null)`) compile under
+     * `strictTemplates`. Values pushed back into the model are always the unmasked string (see
+     * `_propagateToValueModel`), i.e. `value()` / `valueChange` are declared wider than what is
+     * emitted.
+     */
+    public value = model<string | number | null | undefined>('');
     public disabled = input(false, { transform: booleanAttribute });
     public touched = model<boolean>(false);
 
@@ -366,7 +382,10 @@ export class NgxMaskDirective
             }
         }
         if (placeHolderCharacter) {
-            this._maskService.placeHolderCharacter = placeHolderCharacter.currentValue;
+            // `null`/`undefined` means "no custom placeholder" (#1643): fall back to the default
+            // instead of storing null, which broke every `.length` read on the service.
+            this._maskService.placeHolderCharacter =
+                placeHolderCharacter.currentValue ?? this._config.placeHolderCharacter;
             if (
                 typeof placeHolderCharacter.currentValue === 'string' &&
                 placeHolderCharacter.currentValue.length > 1 &&
@@ -1378,6 +1397,9 @@ export class NgxMaskDirective
         const isTextarea = el.tagName.toLowerCase() === 'textarea';
 
         if (el.type !== 'number') {
+            if (this._insertNumpadDecimalMarker(e, el)) {
+                return;
+            }
             if (e.key === MaskExpression.ARROW_UP && !isTextarea) {
                 e.preventDefault();
             }
@@ -1444,8 +1466,17 @@ export class NgxMaskDirective
                     // triggers change detection (DOM churn around the input), leaving the
                     // model empty but the view untouched until a second Backspace (#1350).
                     e.preventDefault();
+                    // The default action (and its input event) is suppressed, so the
+                    // inputTransformFn would never see the cleared value; run it here (#1651).
+                    const transformedEmpty = this._maskService.inputTransformFn
+                        ? this._maskService.inputTransformFn(MaskExpression.EMPTY_STRING)
+                        : MaskExpression.EMPTY_STRING;
+                    const clearedValue =
+                        typeof transformedEmpty === 'string' || typeof transformedEmpty === 'number'
+                            ? String(transformedEmpty)
+                            : MaskExpression.EMPTY_STRING;
                     const displayValue = this._maskService.applyMask(
-                        MaskExpression.EMPTY_STRING,
+                        clearedValue,
                         this._maskService.maskExpression,
                         0,
                         false,
@@ -1476,6 +1507,50 @@ export class NgxMaskDirective
             this._maskService.selStart = el.selectionStart;
             this._maskService.selEnd = el.selectionEnd;
         }
+    }
+
+    /**
+     * #1641: on layouts whose decimal separator is a comma, the numeric keypad still emits
+     * a period, which a separator mask configured with a comma decimal marker rejects. The
+     * keypad decimal key (`key: 'Decimal'`, or a `.` from `code: 'NumpadDecimal'`) is
+     * therefore turned into the configured marker. Only the keypad key is intercepted: a
+     * period typed on the main keyboard keeps its normal behavior (e.g. as a thousand
+     * separator). Returns true when the key press was handled.
+     */
+    private _insertNumpadDecimalMarker(e: KeyboardEvent, el: HTMLInputElement): boolean {
+        const isNumpadDecimal =
+            e.key === MaskExpression.NUMPAD_DECIMAL ||
+            (e.code === MaskExpression.NUMPAD_DECIMAL_CODE && e.key === MaskExpression.DOT);
+        if (
+            !isNumpadDecimal ||
+            e.ctrlKey ||
+            e.metaKey ||
+            e.altKey ||
+            el.readOnly ||
+            !this._maskValue().startsWith(MaskExpression.SEPARATOR)
+        ) {
+            return false;
+        }
+        const configuredMarker = this._maskService.decimalMarker;
+        const marker = Array.isArray(configuredMarker)
+            ? configuredMarker.find((item) => item !== this._maskService.thousandSeparator)
+            : configuredMarker;
+        if (marker !== MaskExpression.COMMA) {
+            return false;
+        }
+        const start = el.selectionStart ?? el.value.length;
+        const end = el.selectionEnd ?? start;
+        e.preventDefault();
+        this._code.set(MaskExpression.NUMPAD_DECIMAL_CODE);
+        this._inputValue.set(el.value);
+        this._maskService.selStart = start;
+        this._maskService.selEnd = end;
+        el.value = `${el.value.slice(0, start)}${marker}${el.value.slice(end)}`;
+        el.setSelectionRange(start + 1, start + 1);
+        el.dispatchEvent(
+            new InputEvent('input', { inputType: 'insertText', data: marker, bubbles: true })
+        );
+        return true;
     }
 
     /**
@@ -1897,7 +1972,9 @@ export class NgxMaskDirective
                 : this.prefix()
                   ? alternative.length + this.prefix().length
                   : alternative.length;
-            return processedValue.length >= requiredLength;
+            // Exact match, not `>=`: a longer value must not pass on the strength of a
+            // shorter alternative it has already outgrown (#1645, 7 digits vs `00000 9`).
+            return processedValue.length === requiredLength;
         });
     }
 

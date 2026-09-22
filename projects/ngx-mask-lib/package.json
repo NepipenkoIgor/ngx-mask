@@ -1,6 +1,6 @@
 {
     "name": "ngx-mask",
-    "version": "22.1.0",
+    "version": "22.2.0",
     "description": "Input masking for modern Angular — Reactive, template-driven and Signal Forms, zoneless and SSR ready. Dates, numbers, separators, custom patterns.",
     "keywords": [
         "ng2-mask",
@@ -19,6 +19,7 @@
         "LICENSE",
         "README.md",
         "fesm2022/ngx-mask.mjs",
+        "fesm2022/ngx-mask.mjs.map",
         "types",
         "package.json"
     ],

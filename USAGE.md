@@ -484,6 +484,8 @@ Input value: 12345678,56
 Masked value: 1.234,56
 ```
 
+On a `separator` mask with `decimalMarker=","` (e.g. `thousandSeparator="."`) the numeric keypad decimal key inserts `,`; a `.` typed on the main keyboard keeps its normal behavior.
+
 ### Time validation
 
 You can validate your input as 24 hour format.
@@ -537,6 +539,8 @@ You can validate your input for percents.
 ```html
 <input type="text" mask="percent" suffix="%" />
 ```
+
+`percent` also works with several decimal markers, e.g. `[decimalMarker]="['.', ',']"` accepts both `12.5` and `12,5`.
 
 ### FormControl validation
 
