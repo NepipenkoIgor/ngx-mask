@@ -48,6 +48,7 @@ export class AccordionComponent implements AfterViewInit, OnDestroy {
 
     public readonly githubProfileLink = 'https://github.com/NepipenkoIgor';
     public readonly linkedInProfileLink = 'https://www.linkedin.com/in/igor-nepipenko-ai-architect';
+    public readonly xProfileLink = 'https://x.com/IgorNepipenko';
     public readonly upworkProfileLink = 'https://www.upwork.com/freelancers/nepipenkoaiarchitect';
 
     private readonly activatedRoute = inject(ActivatedRoute);

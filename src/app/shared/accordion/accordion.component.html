@@ -36,6 +36,13 @@
             <img width="18" height="18" [ngSrc]="'linkedin' | asset: openSourceHeaderPath" alt="" />
         </a>
         <a
+            [href]="xProfileLink"
+            target="_blank"
+            rel="noopener noreferrer"
+            [attr.aria-label]="'X' | anchorLabel">
+            <img width="18" height="18" [ngSrc]="'x' | asset: openSourceHeaderPath" alt="" />
+        </a>
+        <a
             [href]="upworkProfileLink"
             target="_blank"
             rel="noopener noreferrer"
