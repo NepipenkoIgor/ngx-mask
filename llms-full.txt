@@ -1,0 +1,459 @@
+# ngx-mask
+
+> Input masking library for modern Angular. One standalone directive (`NgxMaskDirective`) and pipe (`NgxMaskPipe`) cover Reactive Forms, template-driven forms and Signal Forms through a `ControlValueAccessor`, and run in zoneless and SSR apps. No `NgxMaskModule` in current versions — configuration is registered via `provideEnvironmentNgxMask()` / `provideNgxMask()`. No runtime dependencies beyond Angular, ~15 KB gzipped.
+
+npm package: `ngx-mask`. Supports Angular 17+ (see version pins below for older Angular). Source: https://github.com/NepipenkoIgor/ngx-mask
+
+## Installation
+
+```bash
+npm install ngx-mask
+# or
+bun add ngx-mask
+```
+
+Older Angular versions need a pinned ngx-mask release:
+
+```bash
+npm install ngx-mask@16.4.2   # Angular 16.x
+npm install ngx-mask@15.2.3   # Angular 15.x
+npm install ngx-mask@14.3.3   # Angular 14.x
+npm install ngx-mask@13.2.2   # Angular 13.x / 12.x
+```
+
+## Setup: standalone application
+
+```typescript
+// app.config.ts
+import { ApplicationConfig } from '@angular/core';
+import { provideEnvironmentNgxMask } from 'ngx-mask';
+
+export const appConfig: ApplicationConfig = {
+    providers: [provideEnvironmentNgxMask()],
+};
+```
+
+```typescript
+// any component that uses the mask
+import { Component } from '@angular/core';
+import { NgxMaskDirective } from 'ngx-mask';
+
+@Component({
+    selector: 'app-example',
+    standalone: true,
+    imports: [NgxMaskDirective],
+    template: `<input mask="0000" />`,
+})
+export class ExampleComponent {}
+```
+
+With custom application-wide config:
+
+```typescript
+import { NgxMaskConfig } from 'ngx-mask';
+
+const maskConfig: Partial<NgxMaskConfig> = { validation: false };
+
+bootstrapApplication(AppComponent, { providers: [provideEnvironmentNgxMask(maskConfig)] }).catch(
+    (err) => console.error(err)
+);
+```
+
+Per-component/feature override (replaces, does not merge with, the environment config for that subtree):
+
+```typescript
+import { Component } from '@angular/core';
+import { NgxMaskDirective, provideNgxMask } from 'ngx-mask';
+
+@Component({
+    selector: 'my-feature',
+    standalone: true,
+    imports: [NgxMaskDirective],
+    providers: [provideNgxMask({ thousandSeparator: ',' })],
+    template: `<input mask="separator.2" />`,
+})
+export class PriceInputComponent {}
+```
+
+Directive inputs (e.g. `[thousandSeparator]`) always win over `provideNgxMask()`, which always wins over `provideEnvironmentNgxMask()`, which wins over library defaults.
+
+## Setup: NgModule-based application
+
+```typescript
+import { NgModule } from '@angular/core';
+import { NgxMaskDirective, NgxMaskPipe, provideEnvironmentNgxMask } from 'ngx-mask';
+
+@NgModule({
+    imports: [NgxMaskDirective, NgxMaskPipe],
+    exports: [NgxMaskDirective, NgxMaskPipe],
+    providers: [provideEnvironmentNgxMask()],
+})
+export class AppModule {}
+```
+
+Migrating from ngx-mask ≤ 14 (`NgxMaskModule` only exists there, for Angular < 15):
+
+```typescript
+// Before (ngx-mask <= 14)
+@NgModule({ imports: [NgxMaskModule.forRoot(maskConfig)] })
+export class AppModule {}
+
+// After (current ngx-mask)
+@NgModule({
+    imports: [NgxMaskDirective],
+    providers: [provideEnvironmentNgxMask(maskConfig)],
+})
+export class AppModule {}
+```
+
+## Common pitfalls
+
+- `NullInjectorError: No provider for InjectionToken ngx-mask config` — the directive/pipe is used with no provider in scope. Add `provideEnvironmentNgxMask()` to bootstrap providers (or `provideNgxMask()` to the component).
+- `NgxMaskModule` not found — that API is ngx-mask ≤ 14 only. Use the standalone imports + provider functions above.
+- Config seems ignored — a closer `provideNgxMask()` in a parent component *replaces* (does not merge with) the environment config for that subtree; directive inputs override both.
+
+## Basic usage: directive and pipe
+
+```html
+<input type="text" mask="0000" />
+<input type="text" [mask]="maskPattern" />
+```
+
+```html
+<span>{{ phone | mask: '(000) 000-0000' }}</span>
+<span>{{ value | mask: 'separator' : { thousandSeparator: ',', suffix: ' sm' } }}</span>
+```
+
+Built-in pattern tokens:
+
+| token | meaning |
+| ----- | ------- |
+| `0` | digit (0-9), required |
+| `9` | digit (0-9), optional |
+| `A` | letter or digit |
+| `S` | letter only |
+| `U` | uppercase letter only |
+| `L` | lowercase letter only |
+
+| mask example    | matches        |
+| ---------------- | -------------- |
+| `9999-99-99`      | `2017-04-15`   |
+| `0*.00`            | `2017.22`      |
+| `000.000.000-99`   | `048.457.987-98` |
+| `AAAA`             | `0F6g`         |
+| `SSSS`             | `asDF`         |
+| `UUUU`             | `ASDF`         |
+| `LLLL`             | `asdf`         |
+
+## Mask Options reference
+
+All options below are directive inputs (`<input [optionName]="value" mask="...">`) and are also accepted by `provideEnvironmentNgxMask(options)` / `provideNgxMask(options)` as an `NgxMaskOptions` object.
+
+### specialCharacters (string[])
+
+Default special characters: `- / ( ) . : (space) + , @ [ ] " '`. Overriding this array replaces the defaults entirely — list every character you need.
+
+```html
+<input type="text" [specialCharacters]="['[', ']', '\\']" mask="[00]\[000]" />
+```
+
+```text
+Input value: 789-874.98
+Masked value: [78]\[987]
+```
+
+### patterns (`{ [char: string]: { pattern: RegExp, optional?: boolean } }`)
+
+```html
+<input type="text" [patterns]="customPatterns" mask="(000-000)" />
+```
+
+```typescript
+public customPatterns = { '0': { pattern: new RegExp('[a-zA-Z]') } };
+```
+
+```text
+Input value: 789HelloWorld
+Masked value: (Hel-loW)
+```
+
+### Custom pattern definition with a symbol
+
+```typescript
+pattern = {
+    B: {
+        pattern: new RegExp('\\d'),
+        symbol: 'X',
+    },
+};
+```
+
+Reserved characters `h`, `d`, `m`, `s` are used by date/time patterns — avoid them in custom patterns. `*` is reserved for `0*`-style "any length of digits" masks.
+
+### prefix (string)
+
+```html
+<input type="text" prefix="+7" mask="(000) 000 00 00" />
+```
+
+### instantPrefix (boolean)
+
+Controls whether the prefix shows on an empty model.
+
+```html
+<input type="text" prefix="+7" instantPrefix="false" mask="(000) 000 00 00" />
+<input type="text" prefix="+7" instantPrefix="true" mask="(000) 000 00 00" />
+```
+
+### suffix (string)
+
+```html
+<input type="text" suffix="$" mask="0000" />
+```
+
+### dropSpecialCharacters (boolean | string[])
+
+Default `true` — special characters are stripped from the model value.
+
+```html
+<input type="text" [dropSpecialCharacters]="false" mask="000-000.00" />
+```
+
+```text
+Input value: 789-874.98
+Model value: 789-874.98
+```
+
+### showMaskTyped (boolean)
+
+Default `false` — show the mask skeleton while typing.
+
+```html
+<input mask="(000) 000-0000" prefix="+7" [showMaskTyped]="true" />
+```
+
+### allowNegativeNumbers (boolean)
+
+Default `false`.
+
+```html
+<input type="text" [allowNegativeNumbers]="true" mask="separator.2" />
+```
+
+```text
+Input value: -10,000.45
+Model value: -10000.45
+```
+
+### placeHolderCharacter (string)
+
+Default `_`. Only relevant when `showMaskTyped` is `true`.
+
+```html
+<input mask="(000) 000-0000" prefix="+7" [showMaskTyped]="true" placeHolderCharacter="*" />
+```
+
+### clearIfNotMatch (boolean)
+
+Default `false` — clears the input if the typed value does not fully match the mask.
+
+### typeFromDecimals (boolean)
+
+Default `false`. Opt-in "banking"/calculator-style typing for `separator.N` masks (N > 0): digits fill from the decimal end (`5` -> `0.05`, then `7` -> `0.57`, then `3` -> `5.73`; backspace shifts back). Works with `thousandSeparator`, `prefix`/`suffix`, `allowNegativeNumbers`, `separatorLimit`.
+
+```html
+<input type="text" mask="separator.2" [typeFromDecimals]="true" thousandSeparator="," />
+<!-- typing 1 2 3 4 5 6 renders: 0.01 -> 0.12 -> 1.23 -> 12.34 -> 123.45 -> 1,234.56 -->
+```
+
+```typescript
+provideNgxMask({ typeFromDecimals: true });
+```
+
+### defaultValueOnBlur (string)
+
+Default `null`. When set, this raw value is written through the mask pipeline on blur whenever the control's unmasked value is empty.
+
+```html
+<input type="text" mask="separator.2" defaultValueOnBlur="0" />
+<!-- user clears the input and blurs -> displayed "0", model 0 -->
+```
+
+With `showMaskTyped`:
+
+```html
+<input type="text" mask="0000" [showMaskTyped]="true" defaultValueOnBlur="9" />
+<!-- user blurs the empty input -> displayed "9___", model "9" -->
+```
+
+```typescript
+provideNgxMask({ defaultValueOnBlur: '0' });
+```
+
+For conditional/computed defaults, use transform functions instead:
+
+```typescript
+public outputTransformFn = (value: string | number | undefined | null) => (value === '' || value == null ? 0 : value);
+public inputTransformFn = (value: unknown) => (value === '' || value == null ? '0' : (value as string | number));
+```
+
+### Pipe with a custom pattern: `[string, pattern]`
+
+```html
+<span>{{ phone | mask: customMask }}</span>
+```
+
+```typescript
+pattern = { P: { pattern: new RegExp('\\d') } };
+customMask: [string, typeof pattern] = ['PPP-PPP', pattern];
+```
+
+### Repeat mask with `{n}`
+
+```html
+<input type="text" mask="A{4}" />
+```
+
+### Thousand separator / decimal masks (`separator`)
+
+```html
+<input type="text" mask="separator" />
+<!-- default separator: space -->
+
+<input type="text" mask="separator" thousandSeparator="." />
+
+<input type="text" mask="separator.2" />
+<!-- .N = decimal precision; 2 is common for currency, 0 disables decimals -->
+```
+
+```text
+Input: 1234.56 -> Masked: 1 234.56           (default space separator)
+Input: 1234,56 -> Masked: 1.234,56           (thousandSeparator=".")
+Input: 1234.56 -> Masked: 1,234              (thousandSeparator="," , separator.0)
+```
+
+```html
+<input type="text" mask="separator.2" thousandSeparator="." />
+<input type="text" mask="separator.2" thousandSeparator="," />
+<input type="text" mask="separator.0" thousandSeparator="." />
+<input type="text" mask="separator.0" thousandSeparator="," />
+
+<input type="text" mask="separator.2" [leadZero]="true" />
+<!-- Input: 12 -> Masked: 12.00 | Input: 12.1 -> Masked: 12.10 -->
+
+<input type="text" mask="separator.2" separatorLimit="1000" />
+<!-- caps digits before the decimal point: Input 12345678,56 -> Masked 1.234,56 -->
+```
+
+On a `separator` mask with `decimalMarker=","`, the numeric-keypad decimal key inserts `,` while the main-keyboard `.` keeps its normal behavior.
+
+### Time validation (24h)
+
+```html
+<input type="text" mask="Hh:m0:s0" />
+```
+
+### Date validation
+
+```html
+<input type="text" mask="d0/M0/0000" />
+```
+
+### leadZeroDateTime (boolean)
+
+Default `false`. Replaces skipped date/time digits with `0`.
+
+```html
+<input type="text" mask="d0/M0/0000" [leadZeroDateTime]="true" />
+<!-- Input: 422020 -> Masked: 04/02/2020 -->
+
+<input type="text" mask="Hh:m0:s0" [leadZeroDateTime]="true" />
+<!-- Input: 777 -> Masked: 07:07:07 -->
+```
+
+### Percent validation
+
+```html
+<input type="text" mask="percent" suffix="%" />
+```
+
+`percent` accepts multiple decimal markers via `[decimalMarker]="['.', ',']"` (both `12.5` and `12,5`).
+
+### FormControl validation
+
+Default `true`.
+
+```html
+<input type="text" mask="00 00" [validation]="true" />
+```
+
+### Secure / hidden input
+
+```html
+<input placeholder="Secure input" [hiddenInput]="true" mask="XXX/X0/0000" />
+```
+
+Date tokens `d` (day) and `M` (month) can be hidden too, keeping the year visible:
+
+```html
+<input placeholder="Secure date input" [hiddenInput]="true" mask="d0/M0/0000" />
+```
+
+### Built-in validated masks: IP, CPF/CNPJ
+
+```html
+<input mask="IP" />
+<input mask="CPF_CNPJ" />
+<input mask="CPF_CNPJ_ALPHA" />
+```
+
+### Multi-mask expressions with `||`
+
+```html
+<input mask="000.000.000-00||00.000.000/0000-00" />
+<input mask="(00) 0000-0000||(00) 0 0000-0000" />
+<input mask="00||SS" />
+```
+
+### Custom mask aliases
+
+Define named masks once in config, reference by name in `mask`. Aliases resolve before other mask processing and may expand to a `||` multi-mask expression.
+
+```typescript
+provideNgxMask({
+    maskAliases: {
+        PHONE_BR: '(00) 00000-0000',
+        MY_DOC: '000-AAA||0000-AAA',
+    },
+});
+```
+
+```html
+<input mask="PHONE_BR" />
+<input mask="MY_DOC" />
+```
+
+Alias keys must be UPPER_SNAKE_CASE and must not shadow built-in tokens (`IP`, `CPF_CNPJ`, `CPF_CNPJ_ALPHA`, ...) — a shadowing alias is ignored with a one-time console warning. The alias map is static per injector (no runtime changes). Security: alias values are mask expressions evaluated by the library — define them statically, never from untrusted user input.
+
+### maskFilled output event
+
+```html
+<input mask="0000" (maskFilled)="maskFilled()" />
+```
+
+## Version compatibility
+
+- Angular 17+: latest ngx-mask, full feature set (this doc).
+- Angular 16.x: `ngx-mask@16.4.2`
+- Angular 15.x: `ngx-mask@15.2.3`
+- Angular 14.x: `ngx-mask@14.3.3`
+- Angular 13.x / 12.x: `ngx-mask@13.2.2`
+- Only Angular 17+ builds receive new features and updates.
+
+## Links
+
+- Live demo & interactive docs: https://nepipenkoigor.github.io/ngx-mask/
+- Full USAGE reference: https://github.com/NepipenkoIgor/ngx-mask/blob/develop/USAGE.md
+- README: https://github.com/NepipenkoIgor/ngx-mask/blob/develop/README.md
+- Changelog: https://github.com/NepipenkoIgor/ngx-mask/blob/develop/CHANGELOG.md
+- Issues: https://github.com/NepipenkoIgor/ngx-mask/issues

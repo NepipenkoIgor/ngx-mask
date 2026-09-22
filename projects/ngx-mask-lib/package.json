@@ -18,6 +18,8 @@
     "files": [
         "LICENSE",
         "README.md",
+        "llms.txt",
+        "llms-full.txt",
         "fesm2022/ngx-mask.mjs",
         "fesm2022/ngx-mask.mjs.map",
         "types",

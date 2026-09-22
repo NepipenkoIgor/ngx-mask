@@ -4,6 +4,10 @@
 
 Use this file to find the right doc before answering questions about ngx-mask, generating code with it, or upgrading a project to a current version. Package name on npm: `ngx-mask`. Supports Angular 17+ (see README for older-Angular version pins).
 
+## Full reference (single file, code-only)
+
+- [llms-full.txt](https://github.com/NepipenkoIgor/ngx-mask/blob/develop/llms-full.txt): the entire API in one file with inline runnable code snippets — installation, standalone/NgModule setup, every `NgxMaskOptions` field, all built-in masks (date, time, percent, IP, CPF_CNPJ, separator/thousands, secure input, multi-mask `||`, custom aliases). Prefer this file when grounding code generation for ngx-mask.
+
 ## Setup
 
 - [Installation & Quick Start](https://github.com/NepipenkoIgor/ngx-mask/blob/develop/README.md#installation): npm/bun install commands, version pins for Angular 12–16, standalone and NgModule bootstrap, `provideEnvironmentNgxMask` vs `provideNgxMask`, migrating off `NgxMaskModule.forRoot()` (ngx-mask ≤14 only).
