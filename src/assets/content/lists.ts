@@ -199,6 +199,11 @@ export const lists: ListItem[] = [
                 id: 6,
                 scrollTo: 'banking',
             },
+            {
+                content: 'Numpad decimal key',
+                id: 7,
+                scrollTo: 'numpadDecimal',
+            },
         ],
     },
     {
@@ -233,6 +238,11 @@ export const lists: ListItem[] = [
                 content: 'Percent with comma',
                 id: 5,
                 scrollTo: 'percentDecimalMarker',
+            },
+            {
+                content: 'Percent with multiple decimal markers',
+                id: 7,
+                scrollTo: 'percentMultipleDecimalMarkers',
             },
         ],
     },

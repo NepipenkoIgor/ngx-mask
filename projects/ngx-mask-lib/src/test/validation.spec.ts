@@ -268,3 +268,40 @@ describe('Directive: Mask (Validation)', () => {
         expect(component.form.valid).equal(true);
     });
 });
+
+describe('Issue #1645: multi mask with different lengths validates by length', () => {
+    let fixture: ComponentFixture<TestMaskComponent>;
+    let component: TestMaskComponent;
+    let input: HTMLInputElement;
+
+    beforeEach(() => {
+        TestBed.configureTestingModule({
+            imports: [ReactiveFormsModule, NgxMaskDirective, TestMaskComponent],
+            providers: [provideNgxMask()],
+        });
+        fixture = TestBed.createComponent(TestMaskComponent);
+        component = fixture.componentInstance;
+        component.mask.set('00000 9||00 00000 0');
+        component.validation.set(true);
+        fixture.detectChanges();
+        input = fixture.nativeElement.querySelector('input') as HTMLInputElement;
+    });
+
+    function valid(value: string): boolean {
+        input.value = value;
+        input.dispatchEvent(new Event('input'));
+        return component.form.valid;
+    }
+
+    it.each([
+        ['1234', false],
+        ['12345', true],
+        ['123456', true],
+        ['1234567', false],
+        ['12345678', true],
+        // The mask truncates the ninth digit, so the control holds a valid 8-digit value.
+        ['123456789', true],
+    ])('#1645: %s -> valid=%s', (value, expected) => {
+        expect(valid(value)).toBe(expected);
+    });
+});

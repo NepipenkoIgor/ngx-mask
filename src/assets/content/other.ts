@@ -40,6 +40,13 @@ export const OthDocs: ComDoc[] = [
         anchor: 'percentDecimalMarker',
     },
     {
+        header: 'Percent with multiple decimalMarkers',
+        text: 'Both `.` and `,` are accepted as the decimal marker of a percent mask',
+        code: ` <input type='text' [decimalMarker]="['.', ',']" mask="percent.2" >`,
+        id: 7,
+        anchor: 'percentMultipleDecimalMarkers',
+    },
+    {
         header: 'Secure date input',
         text: 'You can also hide the day and month digits of a date while keeping the year visible',
         code: ` <input [hiddenInput]="true" mask="d0/M0/0000">`,
@@ -71,9 +78,15 @@ export const OthExamples: (TExampleConfig<MaskOptions> | { _pipe: string })[] = 
         control: { initialValue: '', model: '' },
     },
     {
-        _placeholder: '12 hour format',
+        _placeholder: 'Percent with decimalMarker ,',
         _mask: 'percent.2',
         _decimalMarker: ',',
+        control: { initialValue: '', model: '' },
+    },
+    {
+        _placeholder: 'Percent with multiple decimalMarkers',
+        _mask: 'percent.2',
+        _decimalMarker: ['.', ','],
         control: { initialValue: '', model: '' },
     },
     {

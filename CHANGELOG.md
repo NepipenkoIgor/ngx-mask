@@ -1,3 +1,40 @@
+# 22.2.0(2026-09-21)
+
+### Feature
+
+- Numpad decimal key ([#1641](https://github.com/NepipenkoIgor/ngx-mask/issues/1641)) — on `separator` masks with a comma `decimalMarker` (e.g. `thousandSeparator="."`) the numeric keypad decimal key now inserts `,` instead of being ignored; a `.` typed on the main keyboard is unchanged
+- Signal forms numeric fields ([#1640](https://github.com/NepipenkoIgor/ngx-mask/issues/1640), PR [#1652](https://github.com/NepipenkoIgor/ngx-mask/pull/1652) by mnkprs) — the `value`/`valueChange` model typing now accepts `number | null`, so `formField` works with numeric and nullable signal form fields. Note: the public type was widened to `string | number | null | undefined`
+
+### Fix
+
+- Fix ([#1643](https://github.com/NepipenkoIgor/ngx-mask/issues/1643)) — `placeHolderCharacter` accepts `null` again
+- Fix ([#1645](https://github.com/NepipenkoIgor/ngx-mask/issues/1645)) — multiple masks of different length (`||`) validate properly; note that 9 digits stay valid for the shorter mask because the mask truncates the value
+- Fix ([#1651](https://github.com/NepipenkoIgor/ngx-mask/issues/1651)) — `inputTransformFn` updates the input when the whole value is selected and cleared with Backspace (regression since 21.1.0)
+- Fix ([#1653](https://github.com/NepipenkoIgor/ngx-mask/issues/1653)) — `percent` masks work with multiple `decimalMarker` values (`['.', ',']`)
+- Fix ([#1654](https://github.com/NepipenkoIgor/ngx-mask/issues/1654)) — the source map is shipped in the npm package again
+- Pin ([#1639](https://github.com/NepipenkoIgor/ngx-mask/issues/1639)) — `leadZero` behavior confirmed as intended and covered by regression tests, no source change
+
+### Chore
+
+- All dependencies updated to the latest versions: Angular 22.1.7, Cypress 16, jsdom 30, angular-eslint 22.5, ng-packagr 22.1, eslint 10.11, typescript-eslint 8.70 (vitest stays on 4.x, the range supported by `@angular/build`)
+- TypeScript stays on 6.0.x: `@angular/compiler-cli`, `ng-packagr` and `typescript-eslint` still require `typescript <6.1`
+- Tailwind config renamed to `tailwind.config.mts` (removes the Node module-type warning)
+- Removed the unused deprecated `@angular/platform-browser-dynamic` dependency
+
+# 22.1.0(2026-07-20)
+
+### Feature
+
+- Secure date input and generalized date-field cursor fix (details in the 22.0.2 entry below, [#1574](https://github.com/NepipenkoIgor/ngx-mask/issues/1574), [#1488](https://github.com/NepipenkoIgor/ngx-mask/issues/1488))
+
+### Fix
+
+- Regression fixes for [#1632](https://github.com/NepipenkoIgor/ngx-mask/issues/1632), [#1633](https://github.com/NepipenkoIgor/ngx-mask/issues/1633), [#1634](https://github.com/NepipenkoIgor/ngx-mask/issues/1634) (details in the 22.0.2 entry below)
+
+### Chore
+
+- Dependencies upgraded, ESLint/TS strictness tightened, JSON linting migrated to eslint 10
+
 # 22.0.2(2026-07-20)
 
 ### Feature

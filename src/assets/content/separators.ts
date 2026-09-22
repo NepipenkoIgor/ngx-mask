@@ -47,6 +47,13 @@ export const SepDocs: ComDoc[] = [
         id: 6,
         anchor: 'banking',
     },
+    {
+        header: 'Numpad decimal key',
+        text: 'With decimalMarker "," the numeric keypad decimal key inserts "," (a "." typed on the main keyboard is still the thousand separator)',
+        code: `<input type='text' mask="separator.2" thousandSeparator="." decimalMarker="," />`,
+        id: 7,
+        anchor: 'numpadDecimal',
+    },
 ];
 
 export const SepExamples: TExampleConfig<SepMaskOptions>[] = [
@@ -84,6 +91,13 @@ export const SepExamples: TExampleConfig<SepMaskOptions>[] = [
         _mask: 'separator.2',
         _typeFromDecimals: true,
         _thousandSeparator: ',',
+        control: { initialValue: '', model: '' },
+    },
+    {
+        _placeholder: 'Numpad decimal key',
+        _mask: 'separator.2',
+        _thousandSeparator: '.',
+        _decimalMarker: ',',
         control: { initialValue: '', model: '' },
     },
 ];
