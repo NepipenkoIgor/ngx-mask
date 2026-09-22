@@ -11,7 +11,15 @@
             [ngSrc]="(showAccordion() ? 'close' : 'burger') | asset: openSourceHeaderPath"
             alt="" />
     </button>
-    <span class="text-h5 text-full-white truncate flex-1 min-w-0 px-2.5">{{ title() }}</span>
+    <div class="flex items-center gap-2.5 flex-1 min-w-0 px-2.5">
+        <img
+            width="24"
+            height="24"
+            [ngSrc]="'logo' | asset: openSourceHeaderPath"
+            alt=""
+            class="shrink-0" />
+        <span class="text-h5 text-full-white truncate">{{ title() }}</span>
+    </div>
     <div class="flex items-center gap-15px">
         <a
             [href]="githubProfileLink"
