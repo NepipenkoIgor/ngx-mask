@@ -1,3 +1,7 @@
+<p align="center">
+  <img src=".github/assets/logo.svg" alt="ngx-mask logo" width="120" height="120" />
+</p>
+
 <h1 align="center">ngx-mask</h1>
 
 <p align="center">
