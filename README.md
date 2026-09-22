@@ -21,8 +21,8 @@ A powerful Angular directive for input masking with customizable patterns
   <a href="https://www.npmjs.com/package/ngx-mask">
     <img src="https://img.shields.io/npm/dm/ngx-mask.svg" alt="npm monthly downloads">
   </a>
-  <a href="https://bundlephobia.com/package/ngx-mask">
-    <img src="https://img.shields.io/bundlephobia/minzip/ngx-mask.svg" alt="Bundle size">
+  <a href="https://github.com/NepipenkoIgor/ngx-mask/commits/develop">
+    <img src="https://img.shields.io/github/last-commit/NepipenkoIgor/ngx-mask.svg" alt="Last commit">
   </a>
   <a href="https://www.npmjs.com/package/ngx-mask">
     <img src="https://img.shields.io/npm/types/ngx-mask.svg" alt="TypeScript support">
