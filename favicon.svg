@@ -1,6 +1,14 @@
-<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-    <rect width="32" height="32" rx="7" fill="#0072F5" />
-    <path
-        d="M8 22V10h3.2l4.8 6.4L20.8 10H24v12h-3v-7.6l-4.8 6.4h-.4L11 14.4V22H8z"
-        fill="#FFFFFF" />
+<svg width="250" height="250" viewBox="0 0 250 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="ngx-mask-logo-title">
+    <title id="ngx-mask-logo-title">ngx-mask logo</title>
+    <polygon fill="#DD0031" points="125,30 31.9,63.2 46.1,186.3 125,230 203.9,186.3 218.1,63.2" />
+    <polygon fill="#C3002F" points="125,30 125,230 203.9,186.3 218.1,63.2" />
+    <text
+        x="125"
+        y="122"
+        font-family="Arial, Helvetica, sans-serif"
+        font-weight="900"
+        font-size="135"
+        fill="#FFFFFF"
+        text-anchor="middle"
+        dominant-baseline="central">M</text>
 </svg>

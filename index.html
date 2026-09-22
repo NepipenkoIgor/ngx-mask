@@ -1,12 +1,25 @@
 <!doctype html>
 <html lang="en" data-beasties-container="">
-    <head><meta http-equiv="Content-Security-Policy" content="script-src 'strict-dynamic' 'sha256-ErSGQ5RkfdaGFyDT7yi/vnakQoxNloHzsJR8SRc4ISE=' 'sha256-TE+YZGV4gzyOcNrYmZuwLjlg8VH5yMfM+78L8GXf068=' https: 'unsafe-inline';object-src 'none';base-uri 'self';">
+    <head><meta http-equiv="Content-Security-Policy" content="script-src 'strict-dynamic' 'sha256-ErSGQ5RkfdaGFyDT7yi/vnakQoxNloHzsJR8SRc4ISE=' 'sha256-8oneIQMrBJq9GFNIcujGvnb36Y5P1qjHfIyl0moCXS8=' https: 'unsafe-inline';object-src 'none';base-uri 'self';">
         <meta charset="utf-8">
         <title>Ngx Mask</title>
         <base href="/ngx-mask/">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="description" content="Angular Plugin to make masks on form fields and html elements">
+        <meta name="description" content="Input masking for modern Angular — Reactive, template-driven and Signal Forms, zoneless and SSR ready.">
         <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+        <meta property="og:type" content="website">
+        <meta property="og:title" content="ngx-mask">
+        <meta property="og:description" content="Input masking for modern Angular — Reactive, template-driven and Signal Forms, zoneless and SSR ready.">
+        <meta property="og:url" content="https://nepipenkoigor.github.io/ngx-mask/">
+        <meta property="og:image" content="https://nepipenkoigor.github.io/ngx-mask/assets/images/og-image.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="ngx-mask">
+        <meta name="twitter:description" content="Input masking for modern Angular — Reactive, template-driven and Signal Forms, zoneless and SSR ready.">
+        <meta name="twitter:image" content="https://nepipenkoigor.github.io/ngx-mask/assets/images/og-image.png">
     <style>@layer properties;@layer theme,base,components,utilities;@layer theme{:root{--font-mono:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;--spacing:.25rem;--default-mono-font-family:var(--font-mono)}}@layer base{*,:after,:before{box-sizing:border-box;margin:0;padding:0;border:0 solid}html{line-height:1.5;-webkit-text-size-adjust:100%;tab-size:4;font-family:Varela,system-ui,sans-serif;font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}}@layer utilities{}@property --tw-rotate-x{syntax:"*";inherits:false;}@property --tw-rotate-y{syntax:"*";inherits:false;}@property --tw-rotate-z{syntax:"*";inherits:false;}@property --tw-skew-x{syntax:"*";inherits:false;}@property --tw-skew-y{syntax:"*";inherits:false;}@property --tw-border-style{syntax:"*";inherits:false;initial-value:solid;}@property --tw-tracking{syntax:"*";inherits:false;}@property --tw-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000;}@property --tw-shadow-color{syntax:"*";inherits:false;}@property --tw-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%;}@property --tw-inset-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000;}@property --tw-inset-shadow-color{syntax:"*";inherits:false;}@property --tw-inset-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%;}@property --tw-ring-color{syntax:"*";inherits:false;}@property --tw-ring-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000;}@property --tw-inset-ring-color{syntax:"*";inherits:false;}@property --tw-inset-ring-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000;}@property --tw-ring-inset{syntax:"*";inherits:false;}@property --tw-ring-offset-width{syntax:"<length>";inherits:false;initial-value:0px;}@property --tw-ring-offset-color{syntax:"*";inherits:false;initial-value:#fff;}@property --tw-ring-offset-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000;}@property --tw-outline-style{syntax:"*";inherits:false;initial-value:solid;}@property --tw-blur{syntax:"*";inherits:false;}@property --tw-brightness{syntax:"*";inherits:false;}@property --tw-contrast{syntax:"*";inherits:false;}@property --tw-grayscale{syntax:"*";inherits:false;}@property --tw-hue-rotate{syntax:"*";inherits:false;}@property --tw-invert{syntax:"*";inherits:false;}@property --tw-opacity{syntax:"*";inherits:false;}@property --tw-saturate{syntax:"*";inherits:false;}@property --tw-sepia{syntax:"*";inherits:false;}@property --tw-drop-shadow{syntax:"*";inherits:false;}@property --tw-drop-shadow-color{syntax:"*";inherits:false;}@property --tw-drop-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%;}@property --tw-drop-shadow-size{syntax:"*";inherits:false;}@property --tw-backdrop-blur{syntax:"*";inherits:false;}@property --tw-backdrop-brightness{syntax:"*";inherits:false;}@property --tw-backdrop-contrast{syntax:"*";inherits:false;}@property --tw-backdrop-grayscale{syntax:"*";inherits:false;}@property --tw-backdrop-hue-rotate{syntax:"*";inherits:false;}@property --tw-backdrop-invert{syntax:"*";inherits:false;}@property --tw-backdrop-opacity{syntax:"*";inherits:false;}@property --tw-backdrop-saturate{syntax:"*";inherits:false;}@property --tw-backdrop-sepia{syntax:"*";inherits:false;}@layer properties{@supports ((-webkit-hyphens: none) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color:rgb(from red r g b)))){*,:before,:after{--tw-rotate-x:initial;--tw-rotate-y:initial;--tw-rotate-z:initial;--tw-skew-x:initial;--tw-skew-y:initial;--tw-border-style:solid;--tw-tracking:initial;--tw-shadow:0 0 #0000;--tw-shadow-color:initial;--tw-shadow-alpha:100%;--tw-inset-shadow:0 0 #0000;--tw-inset-shadow-color:initial;--tw-inset-shadow-alpha:100%;--tw-ring-color:initial;--tw-ring-shadow:0 0 #0000;--tw-inset-ring-color:initial;--tw-inset-ring-shadow:0 0 #0000;--tw-ring-inset:initial;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-offset-shadow:0 0 #0000;--tw-outline-style:solid;--tw-blur:initial;--tw-brightness:initial;--tw-contrast:initial;--tw-grayscale:initial;--tw-hue-rotate:initial;--tw-invert:initial;--tw-opacity:initial;--tw-saturate:initial;--tw-sepia:initial;--tw-drop-shadow:initial;--tw-drop-shadow-color:initial;--tw-drop-shadow-alpha:100%;--tw-drop-shadow-size:initial;--tw-backdrop-blur:initial;--tw-backdrop-brightness:initial;--tw-backdrop-contrast:initial;--tw-backdrop-grayscale:initial;--tw-backdrop-hue-rotate:initial;--tw-backdrop-invert:initial;--tw-backdrop-opacity:initial;--tw-backdrop-saturate:initial;--tw-backdrop-sepia:initial}}}</style><script>
 (() => {
   const CSP_MEDIA_ATTR = 'ngCspMedia';
@@ -36,7 +49,7 @@
     <body>
         <ngxd-root></ngxd-root>
     <script>(() => {
-  const scripts = [['main-IE7Q6OPT.js', 'module', false, false, null, null]];
+  const scripts = [['main-RKMVGOFQ.js', 'module', false, false, null, null]];
   scripts.forEach(function(scriptUrl) {
     const s = document.createElement('script');
     s.src = scriptUrl[0];
