@@ -45,6 +45,7 @@ A powerful Angular directive for input masking with customizable patterns
 - [Quick Start](#quick-start)
     - [Standalone Applications](#standalone-applications)
     - [NgModule-based Applications](#ngmodule-based-applications)
+- [For AI Agents](#for-ai-agents)
 - [Contributing](#contributing)
 
 ## Features
@@ -250,6 +251,10 @@ export class AppModule {}
 })
 export class AppModule {}
 ```
+
+## For AI Agents
+
+ngx-mask ships an [`llms.txt`](llms.txt) (index) and [`llms-full.txt`](llms-full.txt) (full API reference with inline code snippets), following the [llmstxt.org](https://llmstxt.org) convention, so tools like Claude Code, Codex and other coding agents can ground themselves in the current API without guessing. The library is also indexed on [Context7](https://context7.com/nepipenkoigor/ngx-mask) for MCP-based doc retrieval.
 
 ## Contributing
 
