@@ -1,6 +1,6 @@
 {
     "name": "ngx-mask",
-    "version": "22.2.0",
+    "version": "22.2.1",
     "description": "Input masking for modern Angular — Reactive, template-driven and Signal Forms, zoneless and SSR ready. Dates, numbers, separators, custom patterns.",
     "license": "MIT",
     "engines": {
@@ -24,7 +24,7 @@
         "build": "ng build --base-href /ngx-mask/  --configuration production",
         "build:lib": "ng build --configuration production ngx-mask-lib && bun run copy-libdocs",
         "ci": "bun run lint && bun run build:lib && bun run test:all && bun run build",
-        "copy-libdocs": "cp README.md LICENSE dist/ngx-mask-lib",
+        "copy-libdocs": "cp README.md LICENSE llms.txt llms-full.txt dist/ngx-mask-lib",
         "lint:scss": "stylelint \"**/*.scss\"",
         "lint:scss:fix": "stylelint \"**/*.scss\" --fix",
         "lint": "ng lint && bun run lint:scss",

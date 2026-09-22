@@ -13,7 +13,6 @@ import {
 import { DOCUMENT, isPlatformServer, NgOptimizedImage } from '@angular/common';
 import type { ListItem } from './content.types';
 import { AssetPipe } from '@shared/asset/asset.pipe';
-import { VisitBtnComponent } from '@shared/visit-btn/visit-btn.component';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BodyStylesService } from '@shared/body-styles/body-styles.service';
 import { OpenSourcePath } from '@shared/path/open-source.path';
@@ -23,7 +22,7 @@ import { AnchorLabelPipe } from '@shared/anchor/anchor-label.pipe';
     selector: 'ngxd-accordion',
     templateUrl: './accordion.component.html',
     styleUrl: './accordion.component.scss',
-    imports: [AssetPipe, VisitBtnComponent, NgOptimizedImage, AnchorLabelPipe],
+    imports: [AssetPipe, NgOptimizedImage, AnchorLabelPipe],
     standalone: true,
     providers: [BodyStylesService],
 })
@@ -49,6 +48,7 @@ export class AccordionComponent implements AfterViewInit, OnDestroy {
 
     public readonly githubProfileLink = 'https://github.com/NepipenkoIgor';
     public readonly linkedInProfileLink = 'https://www.linkedin.com/in/igor-nepipenko-ai-architect';
+    public readonly xProfileLink = 'https://x.com/IgorNepipenko';
     public readonly upworkProfileLink = 'https://www.upwork.com/freelancers/nepipenkoaiarchitect';
 
     private readonly activatedRoute = inject(ActivatedRoute);

@@ -1,0 +1,31 @@
+# ngx-mask
+
+> Input masking library for modern Angular. One standalone directive (`NgxMaskDirective`) and pipe (`NgxMaskPipe`) cover Reactive Forms, template-driven forms and Signal Forms through a `ControlValueAccessor`, and run in zoneless and SSR apps. No `NgxMaskModule` in current versions — configuration is registered via `provideEnvironmentNgxMask()` / `provideNgxMask()`. No runtime dependencies beyond Angular, ~15 KB gzipped.
+
+Use this file to find the right doc before answering questions about ngx-mask, generating code with it, or upgrading a project to a current version. Package name on npm: `ngx-mask`. Supports Angular 17+ (see README for older-Angular version pins).
+
+## Full reference (single file, code-only)
+
+- [llms-full.txt](https://github.com/NepipenkoIgor/ngx-mask/blob/develop/llms-full.txt): the entire API in one file with inline runnable code snippets — installation, standalone/NgModule setup, every `NgxMaskOptions` field, all built-in masks (date, time, percent, IP, CPF_CNPJ, separator/thousands, secure input, multi-mask `||`, custom aliases). Prefer this file when grounding code generation for ngx-mask.
+
+## Setup
+
+- [Installation & Quick Start](https://github.com/NepipenkoIgor/ngx-mask/blob/develop/README.md#installation): npm/bun install commands, version pins for Angular 12–16, standalone and NgModule bootstrap, `provideEnvironmentNgxMask` vs `provideNgxMask`, migrating off `NgxMaskModule.forRoot()` (ngx-mask ≤14 only).
+- [Live demo & interactive docs](https://nepipenkoigor.github.io/ngx-mask/): runnable examples for every mask pattern and option.
+
+## Usage & configuration
+
+- [USAGE.md](https://github.com/NepipenkoIgor/ngx-mask/blob/develop/USAGE.md): the full reference — directive (`mask="..."`) and pipe (`{{ value | mask: '...' }}`) usage, all `NgxMaskOptions` (specialCharacters, prefix/suffix, dropSpecialCharacters, showMaskTyped, allowNegativeNumbers, placeHolderCharacter, clearIfNotMatch, defaultValueOnBlur, thousandSeparator, leadZeroDateTime, custom mask aliases, `maskFilled`), built-in validated masks (date, time, percent, IP, CPF_CNPJ, CPF_CNPJ_ALPHA), secure/hidden input, multi-mask expressions (`|`), and common pitfalls.
+- Provider precedence: directive input > `provideNgxMask()` (subtree) > `provideEnvironmentNgxMask()` (app-wide) > library defaults.
+
+## Reference
+
+- [CHANGELOG.md](https://github.com/NepipenkoIgor/ngx-mask/blob/develop/CHANGELOG.md): version history and breaking changes.
+- [CONTRIBUTING.md](https://github.com/NepipenkoIgor/ngx-mask/blob/develop/CONTRIBUTING.md): dev setup, commit convention, PR process.
+- Source: `projects/ngx-mask-lib/src/lib/` — `ngx-mask.directive.ts`, `ngx-mask.pipe.ts`, `ngx-mask.service.ts`, `ngx-mask-applier.service.ts`, `ngx-mask.config.ts` (option types), `mask-handlers/` (cpf-cnpj, ip, percent, separator, generic-pattern).
+
+## Notes for code generation
+
+- Always import `NgxMaskDirective` / `NgxMaskPipe` directly (standalone) — never `NgxMaskModule`, which only exists in ngx-mask ≤14 for Angular <15.
+- Register config with `provideEnvironmentNgxMask(config?)` (root) or `provideNgxMask(config?)` (per component/route), not a module `forRoot()`.
+- Mask string goes on the `mask` input (`<input mask="0000">`) or as the pipe's first argument; per-usage option overrides are the pipe's second argument.

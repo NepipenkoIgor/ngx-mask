@@ -11,7 +11,15 @@
             [ngSrc]="(showAccordion() ? 'close' : 'burger') | asset: openSourceHeaderPath"
             alt="" />
     </button>
-    <span class="text-h5 text-full-white truncate flex-1 min-w-0 px-2.5">{{ title() }}</span>
+    <div class="flex items-center gap-2.5 flex-1 min-w-0 px-2.5">
+        <img
+            width="24"
+            height="24"
+            [ngSrc]="'logo' | asset: openSourceHeaderPath"
+            alt=""
+            class="shrink-0" />
+        <span class="text-h5 text-full-white truncate">{{ title() }}</span>
+    </div>
     <div class="flex items-center gap-15px">
         <a
             [href]="githubProfileLink"
@@ -26,6 +34,13 @@
             rel="noopener noreferrer"
             [attr.aria-label]="'LinkedIn' | anchorLabel">
             <img width="18" height="18" [ngSrc]="'linkedin' | asset: openSourceHeaderPath" alt="" />
+        </a>
+        <a
+            [href]="xProfileLink"
+            target="_blank"
+            rel="noopener noreferrer"
+            [attr.aria-label]="'X' | anchorLabel">
+            <img width="18" height="18" [ngSrc]="'x' | asset: openSourceHeaderPath" alt="" />
         </a>
         <a
             [href]="upworkProfileLink"
@@ -100,8 +115,5 @@
                 </div>
             </div>
         }
-        <div class="fixed bottom-5 w-[270px]">
-            <ngxd-visit-btn />
-        </div>
     </div>
 </div>

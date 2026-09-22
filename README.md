@@ -1,3 +1,7 @@
+<p align="center">
+  <img src=".github/assets/logo.svg" alt="ngx-mask logo" width="120" height="120" />
+</p>
+
 <h1 align="center">ngx-mask</h1>
 
 <p align="center">
@@ -17,8 +21,8 @@ A powerful Angular directive for input masking with customizable patterns
   <a href="https://www.npmjs.com/package/ngx-mask">
     <img src="https://img.shields.io/npm/dm/ngx-mask.svg" alt="npm monthly downloads">
   </a>
-  <a href="https://bundlephobia.com/package/ngx-mask">
-    <img src="https://img.shields.io/bundlephobia/minzip/ngx-mask.svg" alt="Bundle size">
+  <a href="https://github.com/NepipenkoIgor/ngx-mask/commits/develop">
+    <img src="https://img.shields.io/github/last-commit/NepipenkoIgor/ngx-mask.svg" alt="Last commit">
   </a>
   <a href="https://www.npmjs.com/package/ngx-mask">
     <img src="https://img.shields.io/npm/types/ngx-mask.svg" alt="TypeScript support">
@@ -45,6 +49,7 @@ A powerful Angular directive for input masking with customizable patterns
 - [Quick Start](#quick-start)
     - [Standalone Applications](#standalone-applications)
     - [NgModule-based Applications](#ngmodule-based-applications)
+- [For AI Agents](#for-ai-agents)
 - [Contributing](#contributing)
 
 ## Features
@@ -250,6 +255,10 @@ export class AppModule {}
 })
 export class AppModule {}
 ```
+
+## For AI Agents
+
+ngx-mask ships an [`llms.txt`](llms.txt) (index) and [`llms-full.txt`](llms-full.txt) (full API reference with inline code snippets), following the [llmstxt.org](https://llmstxt.org) convention, so tools like Claude Code, Codex and other coding agents can ground themselves in the current API without guessing. The library is also indexed on [Context7](https://context7.com/nepipenkoigor/ngx-mask) for MCP-based doc retrieval.
 
 ## Contributing
 
