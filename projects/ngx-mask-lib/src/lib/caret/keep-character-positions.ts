@@ -165,8 +165,6 @@ export function resolveKeepCharacterPositions(
                     .join('')
                     .split(suffix)
                     .join('')}${suffix}`;
-
-                position = position - 1;
             } else {
                 const part1 = elValue.substring(0, position);
                 const part2 = elValue.substring(position);

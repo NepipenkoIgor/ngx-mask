@@ -92,6 +92,20 @@ describe('keepCharacterPositions oddities in a real browser', () => {
         }
     });
 
+    it('a digit typed after a selection delete next to a one-character prefix lands in the freed slot (#1719, #1710)', async () => {
+        const config = { ...dollar, mask: '000-000' };
+        expect(await press(config, { typed: '123456' }, 1, 2, '{Backspace}')).toEqual({
+            value: '$_23-456',
+            caret: 1,
+            model: '23456',
+        });
+        expect(await press(config, { typed: '123456' }, 1, 2, '{Backspace}5')).toEqual({
+            value: '$523-456',
+            caret: 2,
+            model: '523456',
+        });
+    });
+
     it('a selection delete in a partial showMaskTyped value keeps the mask tail', async () => {
         const maskedBare = { ...bare, showMaskTyped: true };
         for (const initial of [{ typed: '123' }, { written: '123' }]) {

@@ -814,6 +814,17 @@ export class NgxMaskDirective
         );
     }
 
+    // The caret of an edit that left the value without its prefix (the first character typed
+    // into an empty field, or a selection that swallowed the prefix) sits before the prefix
+    // that applyMask is about to prepend, so it is moved past it. An edit whose value still
+    // starts with the prefix already reports the caret in display coordinates: shifting it
+    // again lands a one-character prefix's index-1 edit one slot off (#1719, #1710).
+    private _caretAfterPrefix(el: HTMLInputElement): number {
+        const caret = el.selectionStart as number;
+        const { prefix } = this._maskService;
+        return caret === 1 && !el.value.startsWith(prefix) ? caret + prefix.length : caret;
+    }
+
     /**
      * Whether nothing the user entered follows the caret, i.e. the edit ended the value. Only
      * the suffix and the untouched skeleton of a showMaskTyped / keepCharacterPositions field
@@ -901,10 +912,7 @@ export class NgxMaskDirective
                     !el.value.startsWith(this._maskService.prefix);
 
                 const caret = el.selectionStart as number;
-                let position: number =
-                    el.selectionStart === 1
-                        ? (el.selectionStart as number) + this._maskService.prefix.length
-                        : (el.selectionStart as number);
+                let position: number = this._caretAfterPrefix(el);
 
                 if (
                     this._maskService.keepCharacterPositions &&
@@ -1048,10 +1056,7 @@ export class NgxMaskDirective
                             position = specialChartMinusOne ? position - 1 : position;
                         }
                     } else {
-                        position =
-                            el.selectionStart === 1
-                                ? (el.selectionStart as number) + this._maskService.prefix.length
-                                : (el.selectionStart as number);
+                        position = this._caretAfterPrefix(el);
                     }
                 }
                 let positionToApply: number =
