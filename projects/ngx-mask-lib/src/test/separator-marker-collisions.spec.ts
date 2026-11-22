@@ -68,4 +68,39 @@ describe('Separator: decimalMarker array overlapping the thousandSeparator', () 
             expect(typeTest('1,234.5', fixture)).equal('1,234.5');
         });
     });
+
+    describe('a single (non-array) decimalMarker is untouched by the model-write branch', () => {
+        it('keeps a "," decimalMarker with "." thousandSeparator', () => {
+            component.thousandSeparator.set('.');
+            component.decimalMarker.set(',');
+            fixture.detectChanges();
+
+            component.form.setValue('1.234,5');
+            fixture.detectChanges();
+            expect(inputValue()).equal('1.234,5');
+
+            component.form.setValue(1234.5);
+            fixture.detectChanges();
+            expect(inputValue()).equal('1.234,5');
+        });
+
+        it('keeps a "." decimalMarker with "," thousandSeparator', () => {
+            component.thousandSeparator.set(',');
+            component.decimalMarker.set('.');
+            fixture.detectChanges();
+
+            component.form.setValue('1234.5');
+            fixture.detectChanges();
+            expect(inputValue()).equal('1,234.5');
+        });
+    });
+
+    it('formats a plain array-marker model write with no grouping marker', () => {
+        component.thousandSeparator.set(' ');
+        fixture.detectChanges();
+
+        component.form.setValue('1234.5');
+        fixture.detectChanges();
+        expect(inputValue()).equal('1 234.5');
+    });
 });

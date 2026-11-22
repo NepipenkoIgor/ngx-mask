@@ -43,4 +43,17 @@ describe('Separator: decimalMarker array overlapping the thousandSeparator (real
         expect(m.get('#masked').value).toBe('1,234.5');
         expect(m.component.form.value).toBe(1234.5);
     });
+
+    it('leaves model writes with a single decimalMarker unchanged', async () => {
+        const m = await mount(MaskHarnessComponent, {
+            mask: 'separator.2',
+            decimalMarker: '.',
+            thousandSeparator: ',',
+        });
+
+        m.component.form.setValue('1234.5');
+        await m.settle();
+
+        expect(m.get('#masked').value).toBe('1,234.5');
+    });
 });
