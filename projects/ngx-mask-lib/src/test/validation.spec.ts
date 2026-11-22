@@ -587,7 +587,7 @@ describe('Directive: Mask (Validation re-runs when the mask configuration change
 
     // #1763: the email verdict used a backtracking regex (polynomial ReDoS); it is now a split check.
     describe('email mask validator (#1763)', () => {
-        const validate = (value: string): unknown => {
+        const validate = (value: unknown): unknown => {
             component.mask.set('A*@A*.A*');
             fixture.detectChanges();
             const directive = fixture.debugElement
@@ -605,6 +605,12 @@ describe('Directive: Mask (Validation re-runs when the mask configuration change
 
         it.each(['a@.bc', 'a@bc.', 'a@b@c.d', '@b.c', 'ab.c'])('rejects %s', (value) => {
             expect(validate(value)).not.toBeNull();
+        });
+
+        it('coerces a non-string truthy value like the old regex did (no throw, invalid)', () => {
+            expect(validate(123)).not.toBeNull();
+            expect(validate(new Event('input'))).not.toBeNull();
+            expect(validate({ toString: () => 'a@b.c' })).toBeNull();
         });
 
         it('validates a pathological "@......" value without hanging', () => {

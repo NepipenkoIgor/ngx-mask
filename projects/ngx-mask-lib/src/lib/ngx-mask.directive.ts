@@ -623,7 +623,7 @@ export class NgxMaskDirective
                 return notFilled(null);
             }
             // Split instead of a regex: `/^[^@]+@[^@]+\.[^@]+$/` backtracks polynomially (ReDoS, #1763).
-            const [local, domain, ...extra] = processedValue.split('@');
+            const [local, domain, ...extra] = String(processedValue).split('@');
             const isEmail =
                 !extra.length && !!local && !!domain && domain.slice(1, -1).includes('.');
 
