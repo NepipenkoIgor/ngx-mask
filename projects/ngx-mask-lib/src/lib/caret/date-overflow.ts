@@ -145,6 +145,7 @@ export function overwriteFullDateValue(
     if (
         inputValue.length >= maskExpression.length - 1 &&
         code !== MaskExpression.BACKSPACE &&
+        code !== MaskExpression.DELETE &&
         maskExpression === MaskExpression.DAYS_MONTHS_YEARS &&
         position < 10
     ) {
@@ -178,16 +179,38 @@ const FIELD_MAX: Readonly<Record<DateTimeField['token'], number>> = {
     s: 59,
 };
 
+/** The highest value of a date or time field. */
+const fieldMax = (field: DateTimeField, apm: boolean): number =>
+    apm && /[Hh]/.test(field.token) ? 12 : FIELD_MAX[field.token];
+
+/** The field of fillable slot `target`; at a boundary of a separator-less mask, the next one. */
+function dateFieldAtSlot(maskExpression: string, target: number): DateTimeField | null {
+    const slot = findDateTimeFieldAt(maskExpression, target);
+    return slot?.end === target ? findDateTimeFieldAt(maskExpression, target + 1) : slot;
+}
+
+/** Whether the field of slot `slotIdx` in `display` is above its maximum or a 00 day or month. */
+export function isFieldOutOfRange(
+    svc: Pick<DateSlotMask, 'maskExpression' | 'apm'>,
+    display: string,
+    slotIdx: number
+): boolean {
+    const field = dateFieldAtSlot(svc.maskExpression, slotIdx);
+    if (!field) {
+        return false;
+    }
+    const digits = display.slice(field.start, field.end);
+    const n = Number(digits);
+    return (
+        /^\d+$/.test(digits) && (n > fieldMax(field, svc.apm) || (!n && /[dM]/.test(field.token)))
+    );
+}
+
 /**
- * A character typed into a date mask whose display is already full length overwrites the next
- * digit slot, skipping separators, so the digits that follow never shift. With leadZeroDateTime
- * a field the digit would push out of range, or a whole selected field the digit replaces, is
- * repaired: the digit keeps its slot and zero-fills (`3` over `15` is `30`) or, when it cannot be a
- * tens digit, is the whole field (`4` over `15` is `04`). A key the slot rejects leaves the display
- * as it was. Null leaves the edit to the caller: not one character typed into a full date, a
- * selection beyond one field, or an out-of-range field without leadZeroDateTime. `before` is the
- * display the keydown saw; only a selection needs it, as one character typed at a caret is
- * `elValue` without it, an edit without a keydown (dictation, insertText) included.
+ * A character typed into a full-length date display overwrites the next digit slot, so the digits
+ * that follow never shift. A digit that would push its field out of range, or replaces a whole
+ * selected field, is repaired (`3` over `15` is `30`, `4` is `04`, or `4` without leadZeroDateTime).
+ * Null leaves the edit to the caller. `before` is the display the keydown saw.
  */
 export function overwriteDateSlot(
     svc: DateSlotMask,
@@ -197,27 +220,25 @@ export function overwriteDateSlot(
 ): DateOverwrite | null {
     const mask = svc.maskExpression;
     const start = position - 1;
-    // A value longer than the mask is read as one character typed at the caret of a full display
-    // (a multi-character mid-value insertion into a shorter display is mis-read; base mangles it too).
+    // A value longer than the mask is read as one character typed at the caret of a full display.
     const display =
         elValue.length > mask.length ? elValue.slice(0, start) + elValue.slice(position) : before;
     // The end of the span the typed character replaced in `display` (a caret replaces nothing).
     const selEnd = display.length - elValue.length + position;
     const typed = elValue.charAt(start);
     const target = nextFillableIndex(mask, svc.specialCharacters, start);
-    const slot = findDateTimeFieldAt(mask, target);
-    // At a field boundary of a separator-less mask (`0000M0d0`) the slot belongs to the next field.
-    const field = slot?.end === target ? findDateTimeFieldAt(mask, target + 1) : slot;
+    const field = dateFieldAtSlot(mask, target);
     if (
         !/[dM]/.test(mask) ||
         display.length !== mask.length ||
         // under showMaskTyped a placeholder slot takes the digit in sequence, not in place
         !/\d/.test(display.charAt(target)) ||
+        // a pair inserted into a short display is no typed digit (#1714)
+        [...mask].some((c, i) => svc.specialCharacters.includes(c) && display.charAt(i) !== c) ||
         // a stale `before` (the keydown of the edit never fired): not the display of the selection
         elValue !== display.slice(0, start) + typed + display.slice(selEnd) ||
-        // a selection stays within one field, and only leadZeroDateTime pads what it replaces
-        selEnd > (field?.end ?? target + 1) ||
-        (selEnd - start > 1 && !svc.leadZeroDateTime)
+        // a selection stays within one field
+        selEnd > (field?.end ?? target + 1)
     ) {
         return null;
     }
@@ -228,21 +249,17 @@ export function overwriteDateSlot(
     let value = display.slice(0, target) + typed + display.slice(target + 1);
     let caret = target + 1;
     if (field) {
-        const max = svc.apm && /[Hh]/.test(field.token) ? 12 : FIELD_MAX[field.token];
-        // A one-digit field, or one still holding a placeholder (`4_` is NaN), is never out of range.
-        const over = Number(value.slice(field.start, field.end)) > max;
         // A selection past the slot is a whole field.
-        if (svc.leadZeroDateTime && (over || selEnd > caret)) {
-            // The digit keeps its tens slot and zero-fills (`3` over `15` is `30`) when it can be
-            // a tens digit; otherwise it is the whole field (`4` over `15` is `04`).
-            const tens = target === field.start && Number(typed) * 10 <= max;
-            value =
-                display.slice(0, field.start) +
-                (tens ? typed + '0' : '0' + typed) +
-                display.slice(field.end);
-            caret = tens ? caret : field.end;
-        } else if (over) {
-            return null;
+        if (isFieldOutOfRange(svc, value, target) || selEnd > caret) {
+            // a lone 0 without leadZeroDateTime waits for its mate
+            if (!svc.leadZeroDateTime && typed === '0') {
+                return null;
+            }
+            // a tens digit keeps its slot and zero-fills (`3` over `15` is `30`)
+            const tens = target === field.start && Number(typed) * 10 <= fieldMax(field, svc.apm);
+            const whole = tens ? typed + '0' : svc.leadZeroDateTime ? '0' + typed : typed;
+            value = display.slice(0, field.start) + whole + display.slice(field.end);
+            caret = tens ? caret : field.start + whole.length;
         }
     }
     return { value, position: caret, end: caret };

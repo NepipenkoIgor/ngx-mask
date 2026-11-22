@@ -227,11 +227,23 @@ describe('overwriteDateSlot', () => {
         });
     });
 
-    it('does not repair a field without leadZeroDateTime', () => {
+    it('repairs a field without leadZeroDateTime, padding nothing (#1713)', () => {
         const svc = service('d0/M0/0000', { leadZeroDateTime: false });
         expect(type(svc, '15/06/2020', 1, '9')?.value).toBe('19/06/2020');
-        expect(type(svc, '15/06/2020', 0, '4')).toBeNull();
-        expect(type(svc, '15/06/2020', 3, '5', 5)).toBeNull();
+        // a digit that can be a tens digit zero-fills and keeps its slot
+        expect(type(svc, '15/06/2020', 0, '3')).toMatchObject({ value: '30/06/2020', position: 1 });
+        expect(type(svc, '15/06/2020', 0, '3', 2)).toMatchObject({
+            value: '30/06/2020',
+            position: 1,
+        });
+        // one that cannot is the whole field, unpadded
+        expect(type(svc, '15/06/2020', 0, '4')).toMatchObject({ value: '4/06/2020', position: 1 });
+        expect(type(svc, '15/06/2020', 3, '5', 5)).toMatchObject({
+            value: '15/5/2020',
+            position: 4,
+        });
+        // a lone 0 is left to the handler
+        expect(type(svc, '15/06/2020', 3, '0', 5)).toBeNull();
     });
 
     it('rejects a key the slot does not accept and keeps the display', () => {
@@ -257,6 +269,13 @@ describe('overwriteDateSlot', () => {
         // a paste of more than one character, at the end of the value and in the middle of it
         expect(overwriteDateSlot(svc, '15/06/2020', '1256/06/2020', 4)).toBeNull();
         expect(overwriteDateSlot(svc, '15/06/2020', '15/5506/2020', 5)).toBeNull();
+    });
+
+    it('leaves two digits inserted at once into a short display to the caller (#1714)', () => {
+        const svc = service('M0/d0');
+        // `45` at 0 of `12/3`: the value is one longer than the mask, the display read from it
+        // (`412/3`) has a digit where the mask has its separator
+        expect(overwriteDateSlot(svc, '12/3', '4512/3', 2)).toBeNull();
     });
 
     it('reads the display from the value when no keydown recorded it', () => {

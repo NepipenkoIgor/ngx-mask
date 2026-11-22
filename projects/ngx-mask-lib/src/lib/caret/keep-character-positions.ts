@@ -1,3 +1,4 @@
+import { isFieldOutOfRange } from './date-overflow';
 import { MaskExpression } from '../ngx-mask-expression.enum';
 import type { NgxMaskService } from '../ngx-mask.service';
 import { nextFillableIndex } from '../ngx-mask.utils';
@@ -16,6 +17,7 @@ export type KeepCharacterPositionsState = Readonly<
         | 'selStart'
         | 'selEnd'
         | 'actualValue'
+        | 'apm'
         | '_checkSymbolMask'
     >
 >;
@@ -95,6 +97,10 @@ export function resolveKeepCharacterPositions(
     const maskEndOf = (preEditLength: number): number => preEditLength - suffix.length;
     const blankEndOf = (preEditLength: number): number =>
         Math.max(Math.min(selEndAbs, maskEndOf(preEditLength)) - prefixLength, 0);
+
+    // A digit that puts a date or time field out of range is rejected (#1724).
+    const outOfRange = (display: string, maskIdx: number): boolean =>
+        isFieldOutOfRange(svc, display.slice(prefixLength), maskIdx);
 
     const backspaceOrDelete =
         edit.code === MaskExpression.BACKSPACE || edit.code === MaskExpression.DELETE;
@@ -205,14 +211,16 @@ export function resolveKeepCharacterPositions(
             const blankEnd = blankEndOf(preEditLength);
             const blanked = `${head}${maskSkeleton.slice(Math.max(selStart, 0), blankEnd)}${tail}`;
             const targetAbs = maskIdx + prefixLength;
+            const typed = `${blanked.slice(0, targetAbs)}${typedSymbol}${blanked.slice(targetAbs + 1)}`;
             if (
                 targetAbs < blanked.length - suffix.length &&
                 svc._checkSymbolMask(
                     typedSymbol,
                     maskExpression[maskIdx] ?? MaskExpression.EMPTY_STRING
-                )
+                ) &&
+                !outOfRange(typed, maskIdx)
             ) {
-                actualValue = `${blanked.slice(0, targetAbs)}${typedSymbol}${blanked.slice(targetAbs + 1)}`;
+                actualValue = typed;
                 position = targetAbs + 1;
             } else {
                 // Rejected symbol: keep the display from before the key, else the blanked one.
@@ -237,6 +245,7 @@ export function resolveKeepCharacterPositions(
                 position - 1 - prefixLength
             );
             const targetAbs = maskIdx + prefixLength;
+            const typed = `${oldDisplayNoSuffix.slice(0, targetAbs)}${inputSymbol}${oldDisplayNoSuffix.slice(targetAbs + 1)}`;
             if (targetAbs >= oldDisplayNoSuffix.length) {
                 if (oldDisplayNoSuffix.length <= prefixLength || !showMaskTyped) {
                     // First symbol, or appending at the end without
@@ -252,9 +261,10 @@ export function resolveKeepCharacterPositions(
                 svc._checkSymbolMask(
                     inputSymbol,
                     maskExpression[maskIdx] ?? MaskExpression.EMPTY_STRING
-                )
+                ) &&
+                !outOfRange(typed, maskIdx)
             ) {
-                actualValue = `${oldDisplayNoSuffix.slice(0, targetAbs)}${inputSymbol}${oldDisplayNoSuffix.slice(targetAbs + 1)}${suffix}`;
+                actualValue = `${typed}${suffix}`;
                 position = targetAbs + 1;
             } else {
                 // Rejected symbol: keep the current display.

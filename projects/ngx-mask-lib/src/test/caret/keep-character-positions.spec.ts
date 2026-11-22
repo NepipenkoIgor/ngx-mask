@@ -29,6 +29,7 @@ function input(overrides: Case): Required<Case> {
         selStart: 0,
         selEnd: 0,
         actualValue: '',
+        apm: false,
         _checkSymbolMask: digitOnly,
         ...overrides,
     };
