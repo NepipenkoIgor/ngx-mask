@@ -619,13 +619,15 @@ export class NgxMaskDirective
             return notFilled(this._validateTime(processedValue));
         }
         if (maskValue === MaskExpression.EMAIL_MASK) {
-            const emailPattern = /^[^@]+@[^@]+\.[^@]+$/;
+            if (!processedValue) {
+                return notFilled(null);
+            }
+            // Split instead of a regex: `/^[^@]+@[^@]+\.[^@]+$/` backtracks polynomially (ReDoS, #1763).
+            const [local, domain, ...extra] = processedValue.split('@');
+            const isEmail =
+                !extra.length && !!local && !!domain && domain.slice(1, -1).includes('.');
 
-            return notFilled(
-                !emailPattern.test(processedValue) && processedValue
-                    ? this._createValidationError(processedValue)
-                    : null
-            );
+            return notFilled(isEmail ? null : this._createValidationError(processedValue));
         }
         if (processedValue && processedValue.length >= 1) {
             let counterOfOpt = 0;

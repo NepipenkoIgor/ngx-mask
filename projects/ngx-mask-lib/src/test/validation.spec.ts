@@ -584,4 +584,34 @@ describe('Directive: Mask (Validation re-runs when the mask configuration change
 
         expect(component.form.errors).toBeNull();
     });
+
+    // #1763: the email verdict used a backtracking regex (polynomial ReDoS); it is now a split check.
+    describe('email mask validator (#1763)', () => {
+        const validate = (value: string): unknown => {
+            component.mask.set('A*@A*.A*');
+            fixture.detectChanges();
+            const directive = fixture.debugElement
+                .query(By.directive(NgxMaskDirective))
+                .injector.get(NgxMaskDirective);
+
+            return directive.validate({ value } as FormControl);
+        };
+
+        it('accepts a well-formed address and an empty value', () => {
+            expect(validate('a@b.c')).toBeNull();
+            expect(validate('')).toBeNull();
+            expect(validate(null as unknown as string)).toBeNull();
+        });
+
+        it.each(['a@.bc', 'a@bc.', 'a@b@c.d', '@b.c', 'ab.c'])('rejects %s', (value) => {
+            expect(validate(value)).not.toBeNull();
+        });
+
+        it('validates a pathological "@......" value without hanging', () => {
+            const start = performance.now();
+
+            expect(validate('@' + '.'.repeat(50000))).not.toBeNull();
+            expect(performance.now() - start).toBeLessThan(1000);
+        });
+    });
 });
