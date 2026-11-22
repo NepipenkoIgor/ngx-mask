@@ -1,5 +1,21 @@
 # Changelog
 
+## [22.3.0](https://github.com/NepipenkoIgor/ngx-mask/compare/v22.2.5...v22.3.0) (2026-11-22)
+
+
+### Feature
+
+* **mask:** align runtime mask switches with fresh mounts and keep forms pristine ([#1743](https://github.com/NepipenkoIgor/ngx-mask/issues/1743)) ([63155ee](https://github.com/NepipenkoIgor/ngx-mask/commit/63155ee405facfc440ab9c62a9a6c831340622e5)), closes [#1701](https://github.com/NepipenkoIgor/ngx-mask/issues/1701) [#1700](https://github.com/NepipenkoIgor/ngx-mask/issues/1700) [#1695](https://github.com/NepipenkoIgor/ngx-mask/issues/1695)
+
+
+### Fix
+
+* **mask:** correct date slot overwrite, prefixed delete and kcp range checks ([#1740](https://github.com/NepipenkoIgor/ngx-mask/issues/1740)) ([72375b4](https://github.com/NepipenkoIgor/ngx-mask/commit/72375b4dfd72bf7665b6e3c8f7a78ea6e71b4a87))
+* **mask:** handle keyless edits, paste caret and hidden-input paste ([#1742](https://github.com/NepipenkoIgor/ngx-mask/issues/1742)) ([a2eac13](https://github.com/NepipenkoIgor/ngx-mask/commit/a2eac131485d2eba485dce11aa8314a87bd282c7)), closes [#1709](https://github.com/NepipenkoIgor/ngx-mask/issues/1709) [#1703](https://github.com/NepipenkoIgor/ngx-mask/issues/1703) [#1702](https://github.com/NepipenkoIgor/ngx-mask/issues/1702)
+* **mask:** keep prefix and suffix intact on keepCharacterPositions edits ([#1741](https://github.com/NepipenkoIgor/ngx-mask/issues/1741)) ([617479a](https://github.com/NepipenkoIgor/ngx-mask/commit/617479a86005720bb394228eca7cd36a561d87ff))
+* **mask:** keep the typed decimal marker and caret in separator masks ([#1736](https://github.com/NepipenkoIgor/ngx-mask/issues/1736)) ([70d189c](https://github.com/NepipenkoIgor/ngx-mask/commit/70d189c23b0a312915620a994d747486632e59bc)), closes [#1726](https://github.com/NepipenkoIgor/ngx-mask/issues/1726) [#1720](https://github.com/NepipenkoIgor/ngx-mask/issues/1720)
+* **mask:** stop shifting the caret past a one-character prefix that is still in the value ([#1737](https://github.com/NepipenkoIgor/ngx-mask/issues/1737)) ([6764934](https://github.com/NepipenkoIgor/ngx-mask/commit/67649342c7c96c776839877def48f6b5c91a7334)), closes [#1719](https://github.com/NepipenkoIgor/ngx-mask/issues/1719) [#1710](https://github.com/NepipenkoIgor/ngx-mask/issues/1710)
+
 ## [22.2.5](https://github.com/NepipenkoIgor/ngx-mask/compare/v22.2.4...v22.2.5) (2026-10-18)
 
 
