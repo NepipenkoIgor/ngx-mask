@@ -820,8 +820,6 @@ export class NgxMaskService extends NgxMaskApplierService {
         // The echo of a write the mask left unchanged is the written model value itself: it is
         // already in model space, so it skips the transform (which would otherwise make the model
         // differ by when the write is applied, see `writtenValue`).
-        const outputTransformFn = this.outputTransformFn;
-
         this.writingValue = false;
         this.maskChanged = false;
 
@@ -871,9 +869,9 @@ export class NgxMaskService extends NgxMaskApplierService {
             result = this._toNumber(inputValue);
         }
         this.onChange(
-            !outputTransformFn || this.isWrittenEcho(result)
+            !this.outputTransformFn || this.isWrittenEcho(result)
                 ? result
-                : outputTransformFn(
+                : this.outputTransformFn(
                       result as Parameters<NonNullable<NgxMaskConfig['outputTransformFn']>>[0]
                   )
         );
