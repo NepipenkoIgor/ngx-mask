@@ -45,6 +45,13 @@ export type KeepCharacterPositionsResult = {
     handled: boolean;
 };
 
+// The display without the prefix it starts with / the suffix it ends with. Only those ends are
+// cut: a prefix and a suffix may be the same character, and a split would eat both.
+const withoutPrefix = (display: string, prefix: string): string =>
+    prefix && display.startsWith(prefix) ? display.slice(prefix.length) : display;
+const withoutSuffix = (display: string, suffix: string): string =>
+    suffix && display.endsWith(suffix) ? display.slice(0, -suffix.length) : display;
+
 /**
  * Resolves one edit of a `keepCharacterPositions` mask: the layout of the mask is kept, so a
  * deleted character leaves a placeholder behind and a typed one overwrites the next fillable slot.
@@ -124,18 +131,15 @@ export function resolveKeepCharacterPositions(
                 handled = false;
             } else if (selStartRaw === prefixLength) {
                 // A selection that reaches into the suffix took part of it out of the element.
-                const rest = selEndAbs > maskEndAbs ? suffix : elValue.split(prefix).join('');
+                const rest = selEndAbs > maskEndAbs ? suffix : withoutPrefix(elValue, prefix);
                 actualValue = `${prefix}${maskSkeleton.slice(0, blankEnd)}${rest}`;
             } else if (selStartRaw === maskSkeleton.length + prefixLength) {
                 actualValue = `${elValue}${maskSkeleton.slice(selStart, selEnd)}`;
             } else {
-                actualValue = `${prefix}${elValue
-                    .split(prefix)
-                    .join('')
-                    .slice(
-                        0,
-                        selStart
-                    )}${maskSkeleton.slice(selStart, blankEnd)}${displayBefore.slice(
+                actualValue = `${prefix}${withoutPrefix(elValue, prefix).slice(
+                    0,
+                    selStart
+                )}${maskSkeleton.slice(selStart, blankEnd)}${displayBefore.slice(
                     selEndAbs,
                     maskEndAbs
                 )}${suffix}`;
@@ -165,17 +169,18 @@ export function resolveKeepCharacterPositions(
             if (!showMaskTyped && position >= elValue.length) {
                 // Deleting the last character: no gap needs to be kept.
                 handled = false;
-            } else if (selStart === 1 && prefix) {
-                actualValue = `${prefix}${placeHolderCharacter}${elValue
-                    .split(prefix)
-                    .join('')
-                    .split(suffix)
-                    .join('')}${suffix}`;
+            } else if (selStart === 1 && prefix && edit.code === MaskExpression.BACKSPACE) {
+                // Backspace over the first digit: the rest follows its blank.
+                actualValue = `${prefix}${placeHolderCharacter}${withoutSuffix(withoutPrefix(elValue, prefix), suffix)}${suffix}`;
             } else {
                 const part1 = elValue.substring(0, position);
                 const part2 = elValue.substring(position);
                 actualValue = `${part1}${placeHolderCharacter}${part2}`;
             }
+        } else {
+            // The browser deleted a separator: the display stays as it was before the key. The
+            // stored value is not that display when a showMaskTyped one carries the suffix.
+            actualValue = restoreBefore(elValue.length + 1);
         }
         // A collapsed Delete steps past the blank it leaves; a deleted selection leaves the caret
         // on its first blank, like Backspace, so the next digit fills it.
@@ -233,7 +238,7 @@ export function resolveKeepCharacterPositions(
         // first fillable mask slot at or after the caret, skipping any number
         // of special characters (#1544, #1489).
         const oldDisplay = `${elValue.slice(0, position - 1)}${elValue.slice(position)}`;
-        const oldDisplayNoSuffix = suffix ? oldDisplay.split(suffix).join('') : oldDisplay;
+        const oldDisplayNoSuffix = withoutSuffix(oldDisplay, suffix);
         if (position - 1 - prefixLength < 0) {
             // Typed inside the prefix: reject the symbol.
             actualValue = restoreBefore(elValue.length - 1);
@@ -247,7 +252,10 @@ export function resolveKeepCharacterPositions(
             const targetAbs = maskIdx + prefixLength;
             const typed = `${oldDisplayNoSuffix.slice(0, targetAbs)}${inputSymbol}${oldDisplayNoSuffix.slice(targetAbs + 1)}`;
             if (targetAbs >= oldDisplayNoSuffix.length) {
-                if (oldDisplayNoSuffix.length <= prefixLength || !showMaskTyped) {
+                // With a suffix, regular masking would leave the caret of a rejected key past the
+                // end of a full mask part, inside the suffix: that key is resolved here.
+                const maskFull = !!suffix && maskIdx >= maskExpression.length;
+                if (oldDisplayNoSuffix.length <= prefixLength || (!showMaskTyped && !maskFull)) {
                     // First symbol, or appending at the end without
                     // showMaskTyped: regular masking handles it (including
                     // leadZeroDateTime insertions).
