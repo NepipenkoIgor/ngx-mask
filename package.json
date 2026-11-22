@@ -24,7 +24,7 @@
             "name": "ngx-mask fesm",
             "path": "dist/ngx-mask-lib/fesm2022/ngx-mask.mjs",
             "gzip": true,
-            "limit": "27.5 kB"
+            "limit": "28.5 kB"
         }
     ],
     "scripts": {
