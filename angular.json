@@ -126,7 +126,8 @@
                             "tsConfig": "projects/ngx-mask-lib/tsconfig.browser-spec.json",
                             "include": ["**/*.browser-spec.ts"],
                             "browsers": ["chromium"],
-                            "headless": true
+                            "headless": true,
+                            "runnerConfig": "projects/ngx-mask-lib/vitest.browser.config.mts"
                         }
                     }
                 }

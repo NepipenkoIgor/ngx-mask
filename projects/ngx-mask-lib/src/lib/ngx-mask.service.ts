@@ -132,13 +132,7 @@ export class NgxMaskService extends NgxMaskApplierService {
         this.maskIsShown = this.showMaskTyped ? this.showMaskInInput() : '';
 
         // Handle specific mask expressions
-        if (this.maskExpression === MaskExpression.IP && this.showMaskTyped) {
-            this.maskIsShown = this.showMaskInInput(inputValue || MaskExpression.HASH);
-        }
-        const isCpfCnpjMask =
-            this.maskExpression === MaskExpression.CPF_CNPJ ||
-            this.maskExpression === MaskExpression.CPF_CNPJ_ALPHA;
-        if (isCpfCnpjMask && this.showMaskTyped) {
+        if (this.isIpOrCpfCnpjMask() && this.showMaskTyped) {
             this.maskIsShown = this.showMaskInInput(inputValue || MaskExpression.HASH);
         }
 
@@ -244,7 +238,7 @@ export class NgxMaskService extends NgxMaskApplierService {
         // Handle backspace with special characters
         if (
             backspaced &&
-            this.specialCharacters.indexOf(this.maskExpression[newPosition] ?? '') !== -1 &&
+            this.specialCharacters.includes(this.maskExpression[newPosition] ?? '') &&
             this.showMaskTyped &&
             !this.prefix
         ) {
@@ -278,12 +272,7 @@ export class NgxMaskService extends NgxMaskApplierService {
         }
 
         // Handle mask changed
-        if (this.maskChanged) {
-            newInputValue = inputValue;
-        } else {
-            newInputValue =
-                Boolean(newInputValue) && newInputValue.length ? newInputValue : inputValue;
-        }
+        newInputValue = this.maskChanged ? inputValue : newInputValue || inputValue;
 
         // Handle keepCharacterPositions: when the directive resolved the display for this
         // edit (kcpHandled === true), or legacily whenever showMaskTyped is on and the
@@ -366,14 +355,9 @@ export class NgxMaskService extends NgxMaskApplierService {
         }
 
         // Update previous and current values
-        if (result || result === '') {
-            this.previousValue = this.currentValue;
-            this.currentValue = result;
-
-            this._emitValue =
-                this.previousValue !== this.currentValue ||
-                (this.previousValue === this.currentValue && justPasted);
-        }
+        this.previousValue = this.currentValue;
+        this.currentValue = result;
+        this._emitValue = this.previousValue !== this.currentValue || justPasted;
 
         // Propagate the input value back to the Angular model
         // Only emit if:
@@ -387,7 +371,7 @@ export class NgxMaskService extends NgxMaskApplierService {
         this._clearMaskChangedUnlessTriggered();
 
         // Handle hidden input and showMaskTyped
-        if (!this.showMaskTyped || (this.showMaskTyped && this.hiddenInput)) {
+        if (!this.showMaskTyped || this.hiddenInput) {
             if (this.hiddenInput) {
                 return this.hiddenDisplay(result);
             }
@@ -402,11 +386,7 @@ export class NgxMaskService extends NgxMaskApplierService {
         // substring check below, because MaskExpression.HOURS is the single character 'H' and
         // 'CPF_CNPJ_ALPHA' contains 'H' (from "ALPHA"), which previously caused CPF_CNPJ_ALPHA
         // to be misrouted into the HOURS branch instead of its own branch.
-        if (
-            this.maskExpression === MaskExpression.IP ||
-            this.maskExpression === MaskExpression.CPF_CNPJ ||
-            this.maskExpression === MaskExpression.CPF_CNPJ_ALPHA
-        ) {
+        if (this.isIpOrCpfCnpjMask()) {
             return `${result}${prefNmask}`;
         } else if (this.maskExpression.includes(MaskExpression.HOURS)) {
             const countSkipedSymbol = this._numberSkipedSymbols(result);
@@ -416,16 +396,17 @@ export class NgxMaskService extends NgxMaskApplierService {
         return `${result}${prefNmask.slice(resLen)}`;
     }
 
+    private isIpOrCpfCnpjMask(): boolean {
+        return (
+            this.maskExpression === MaskExpression.IP ||
+            this.maskExpression === MaskExpression.CPF_CNPJ ||
+            this.maskExpression === MaskExpression.CPF_CNPJ_ALPHA
+        );
+    }
+
     // get the number of characters that were shifted
     private _numberSkipedSymbols(value: string): number {
-        const regex = /(^|\D)(\d\D)/g;
-        let match = regex.exec(value);
-        let countSkipedSymbol = 0;
-        while (match != null) {
-            countSkipedSymbol += 1;
-            match = regex.exec(value);
-        }
-        return countSkipedSymbol;
+        return (value.match(/(^|\D)(\d\D)/g) ?? []).length;
     }
 
     public applyValueChanges(
@@ -520,16 +501,6 @@ export class NgxMaskService extends NgxMaskApplierService {
 
     // this function is not necessary, it checks result against maskExpression
     public getActualValue(res: string): string {
-        const compare: string[] = res.split('').filter((symbol: string, i: number) => {
-            const maskChar = this.maskExpression[i] ?? '';
-            return (
-                this._checkSymbolMask(symbol, maskChar) ||
-                (this.specialCharacters.includes(maskChar) && symbol === maskChar)
-            );
-        });
-        if (compare.join('') === res) {
-            return compare.join('');
-        }
         return res;
     }
 
@@ -661,10 +632,7 @@ export class NgxMaskService extends NgxMaskApplierService {
     }
 
     public checkDropSpecialCharAmount(mask: string): number {
-        const chars: string[] = mask
-            .split('')
-            .filter((item: string) => this._findDropSpecialChar(item));
-        return chars.length;
+        return mask.split('').filter((item: string) => this._findDropSpecialChar(item)).length;
     }
 
     /**
@@ -686,90 +654,39 @@ export class NgxMaskService extends NgxMaskApplierService {
     }
 
     private _checkForIp(inputVal: string): string {
+        const p = this.placeHolderCharacter;
         if (inputVal === MaskExpression.HASH) {
-            return `${this.placeHolderCharacter}.${this.placeHolderCharacter}.${this.placeHolderCharacter}.${this.placeHolderCharacter}`;
+            return `${p}.${p}.${p}.${p}`;
         }
-        const arr = digitsOf(inputVal);
-        if (arr.length <= 3) {
-            return `${this.placeHolderCharacter}.${this.placeHolderCharacter}.${this.placeHolderCharacter}`;
-        }
-        if (arr.length > 3 && arr.length <= 6) {
-            return `${this.placeHolderCharacter}.${this.placeHolderCharacter}`;
-        }
-        if (arr.length > 6 && arr.length <= 9) {
-            return this.placeHolderCharacter;
-        }
-        if (arr.length > 9 && arr.length <= 12) {
-            return '';
-        }
-        return '';
+        const count = digitsOf(inputVal).length;
+        return count <= 3 ? `${p}.${p}.${p}` : count <= 6 ? `${p}.${p}` : count <= 9 ? p : '';
     }
 
     private _checkForCpfCnpj(inputVal: string): string {
-        const cpf =
-            `${this.placeHolderCharacter}${this.placeHolderCharacter}${this.placeHolderCharacter}` +
-            `.${this.placeHolderCharacter}${this.placeHolderCharacter}${this.placeHolderCharacter}` +
-            `.${this.placeHolderCharacter}${this.placeHolderCharacter}${this.placeHolderCharacter}` +
-            `-${this.placeHolderCharacter}${this.placeHolderCharacter}`;
-        const cnpj =
-            `${this.placeHolderCharacter}${this.placeHolderCharacter}` +
-            `.${this.placeHolderCharacter}${this.placeHolderCharacter}${this.placeHolderCharacter}` +
-            `.${this.placeHolderCharacter}${this.placeHolderCharacter}${this.placeHolderCharacter}` +
-            `/${this.placeHolderCharacter}${this.placeHolderCharacter}${this.placeHolderCharacter}${this.placeHolderCharacter}` +
-            `-${this.placeHolderCharacter}${this.placeHolderCharacter}`;
+        const p = this.placeHolderCharacter;
+        const cpf = `${p.repeat(3)}.${p.repeat(3)}.${p.repeat(3)}-${p.repeat(2)}`;
+        const cnpj = `${p.repeat(2)}.${p.repeat(3)}.${p.repeat(3)}/${p.repeat(4)}-${p.repeat(2)}`;
 
         if (inputVal === MaskExpression.HASH) {
             return cpf;
         }
 
         const isCpfCnpjAlpha = this.maskExpression === MaskExpression.CPF_CNPJ_ALPHA;
-        const hasAnyLetter = /[a-zA-Z]/.test(inputVal);
-        const arr = this._countCpfCnpjTypedChars(inputVal, isCpfCnpjAlpha);
-        if (isCpfCnpjAlpha && hasAnyLetter) {
-            // CNPJ_ALPHA shape is "AA.AAA.AAA/AAAA-00": separators fall after the 2nd, 5th,
-            // 8th and 12th typed character, so the placeholder slice offset must account for
-            // however many separators `result` has already passed through, mirroring the
-            // numeric CPF/CNPJ bucketed offsets below.
-            if (arr.length <= 2) {
-                return cnpj.slice(arr.length, cnpj.length);
-            }
-            if (arr.length > 2 && arr.length <= 5) {
-                return cnpj.slice(arr.length + 1, cnpj.length);
-            }
-            if (arr.length > 5 && arr.length <= 8) {
-                return cnpj.slice(arr.length + 2, cnpj.length);
-            }
-            if (arr.length > 8 && arr.length <= 12) {
-                return cnpj.slice(arr.length + 3, cnpj.length);
-            }
-            return cnpj.slice(arr.length + 4, cnpj.length);
-        } else {
-            if (arr.length <= 3) {
-                return cpf.slice(arr.length, cpf.length);
-            }
-            if (arr.length > 3 && arr.length <= 6) {
-                return cpf.slice(arr.length + 1, cpf.length);
-            }
-            if (arr.length > 6 && arr.length <= 9) {
-                return cpf.slice(arr.length + 2, cpf.length);
-            }
-            if (arr.length > 9 && arr.length < 11) {
-                return cpf.slice(arr.length + 3, cpf.length);
-            }
+        const count = this._countCpfCnpjTypedChars(inputVal, isCpfCnpjAlpha).length;
+        // Separators sit between the typed-character groups, so the placeholder slice offset grows by
+        // one for every group boundary `result` has already passed. CNPJ_ALPHA ("AA.AAA.AAA/AAAA-00")
+        // has its boundaries after the 2nd, 5th, 8th and 12th character, CPF after the 3rd, 6th, 9th.
+        const passed = (boundaries: number[]) => boundaries.filter((b) => count > b).length;
+        if (isCpfCnpjAlpha && /[a-zA-Z]/.test(inputVal)) {
+            return cnpj.slice(count + passed([2, 5, 8, 12]));
         }
-        if (arr.length === 11) {
-            return '';
+        if (count < 11) {
+            return cpf.slice(count + passed([3, 6, 9]));
         }
-        if (arr.length === 12) {
-            if (inputVal.length === 17) {
-                return cnpj.slice(16, cnpj.length);
-            }
-            return cnpj.slice(15, cnpj.length);
+        if (count === 12) {
+            return cnpj.slice(inputVal.length === 17 ? 16 : 15);
         }
-        if (arr.length > 12 && arr.length <= 14) {
-            return cnpj.slice(arr.length + 4, cnpj.length);
-        }
-        return '';
+        return count > 12 && count <= 14 ? cnpj.slice(count + 4) : '';
     }
 
     /** Collects the characters counted as "typed" for CPF/CNPJ progress tracking: digits only
@@ -817,7 +734,7 @@ export class NgxMaskService extends NgxMaskApplierService {
         if (
             this.showMaskTyped &&
             this.placeHolderCharacter.length === 1 &&
-            this.specialCharacters.indexOf(this.placeHolderCharacter) === -1
+            !this.specialCharacters.includes(this.placeHolderCharacter)
         ) {
             // eslint-disable-next-line no-param-reassign
             inputValue = inputValue.split(this.placeHolderCharacter).join('');
@@ -883,24 +800,18 @@ export class NgxMaskService extends NgxMaskApplierService {
     }
 
     private _removePrefix(value: string): string {
-        if (!this.prefix) {
-            return value;
-        }
-        return value ? value.replace(this.prefix, '') : value;
+        return this.prefix && value ? value.replace(this.prefix, '') : value;
     }
 
     private _removeSuffix(value: string): string {
-        if (!this.suffix) {
-            return value;
-        }
-        return value ? value.replace(this.suffix, '') : value;
+        return this.suffix && value ? value.replace(this.suffix, '') : value;
     }
 
     private _retrieveSeparatorValue(result: string): string {
         let specialCharacters = Array.isArray(this.dropSpecialCharacters)
-            ? this.specialCharacters.filter((v) => {
-                  return (this.dropSpecialCharacters as string[]).includes(v);
-              })
+            ? this.specialCharacters.filter((v) =>
+                  (this.dropSpecialCharacters as string[]).includes(v)
+              )
             : this.specialCharacters;
         if (
             !this.deletedSpecialCharacter &&
@@ -968,36 +879,25 @@ export class NgxMaskService extends NgxMaskApplierService {
         if (!this.isNumberValue) {
             return separatorValue;
         }
-        if (separatorPrecision) {
-            if (processedResult === this.decimalMarker) {
-                return null;
-            }
-            if (separatorValue.length > 14) {
-                return String(separatorValue);
-            }
-            return this._checkPrecision(this.maskExpression, separatorValue);
-        } else {
+        if (!separatorPrecision) {
             return separatorValue;
         }
+        if (processedResult === this.decimalMarker) {
+            return null;
+        }
+        return separatorValue.length > 14
+            ? separatorValue
+            : this._checkPrecision(this.maskExpression, separatorValue);
     }
 
     private _checkPatternForSpace(): boolean {
-        for (const key in this.patterns) {
-            // eslint-disable-next-line no-prototype-builtins
-            if (this.patterns[key] && this.patterns[key]?.hasOwnProperty('pattern')) {
-                const patternString = this.patterns[key]?.pattern.toString();
-                const pattern = this.patterns[key]?.pattern;
-                if (
-                    (patternString?.includes(MaskExpression.WHITE_SPACE) as boolean) &&
-                    pattern &&
-                    this._testPattern(pattern, this.maskExpression)
-                ) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        return Object.values(this.patterns).some(
+            (item) =>
+                item?.pattern?.toString().includes(MaskExpression.WHITE_SPACE) &&
+                this._testPattern(item.pattern, this.maskExpression)
+        );
     }
+
     private _retrieveSeparatorPrecision(maskExpression: string): number | null {
         const matcher: RegExpMatchArray | null = maskExpression.match(
             new RegExp(`^separator\\.([^d]*)`)

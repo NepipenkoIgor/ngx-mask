@@ -90,4 +90,41 @@ describe('Directive: Mask (bulk insertion)', () => {
         expect(el.value).toBe('123-___');
         expect(component.form.value).toBe('123');
     });
+
+    /** A date field holding `value`, its caret at `caret`. */
+    async function dateField(value: string, caret: number, kcp = false): Promise<HTMLInputElement> {
+        component.mask.set('d0/M0/0000');
+        component.keepCharacterPositions.set(kcp);
+        fixture.detectChanges();
+        component.form.setValue(value);
+        fixture.detectChanges();
+        await fixture.whenStable();
+        const el = input();
+        el.focus();
+        el.setSelectionRange(caret, caret);
+        return el;
+    }
+
+    it('types a run inserted into a complete date over the digits that follow it (#1747)', async () => {
+        const el = await dateField('12052024', 0);
+        insertText('31');
+        expect(el.value).toBe('31/05/2024');
+        expect(component.form.value).toBe('31052024');
+
+        el.setSelectionRange(6, 6);
+        insertText('19');
+        expect(el.value).toBe('31/05/1924');
+        expect(component.form.value).toBe('31051924');
+    });
+
+    it('rejects a pasted date with a field out of range on keepCharacterPositions (#1748)', async () => {
+        const el = await dateField('', 0, true);
+        insertText('00062020');
+        expect(el.value).toBe('');
+        expect(component.form.value).toBeFalsy();
+
+        insertText('15062020');
+        expect(el.value).toBe('15/06/2020');
+        expect(component.form.value).toBe('15062020');
+    });
 });

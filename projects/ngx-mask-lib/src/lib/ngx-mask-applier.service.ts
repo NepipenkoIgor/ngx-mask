@@ -193,7 +193,7 @@ export class NgxMaskApplierService {
         if (
             result[processedPosition - 1] &&
             result.length + 1 === maskExpression.length &&
-            this.specialCharacters.indexOf(maskExpression[maskExpression.length - 1] ?? '') !== -1
+            this.specialCharacters.includes(maskExpression[maskExpression.length - 1] ?? '')
         ) {
             result += maskExpression[maskExpression.length - 1];
         }
@@ -525,28 +525,12 @@ export class NgxMaskApplierService {
     }
 
     protected _findFirstNonZeroAndDecimalIndex(inputString: string, decimalMarker: '.' | ',') {
-        let decimalMarkerIndex: number | null = null;
-        let nonZeroIndex: number | null = null;
-
-        for (let i = 0; i < inputString.length; i++) {
-            const char = inputString[i];
-
-            if (char === decimalMarker && decimalMarkerIndex === null) {
-                decimalMarkerIndex = i;
-            }
-
-            if (char && char >= '1' && char <= '9' && nonZeroIndex === null) {
-                nonZeroIndex = i;
-            }
-
-            if (decimalMarkerIndex !== null && nonZeroIndex !== null) {
-                break;
-            }
-        }
+        const decimalMarkerIndex = inputString.indexOf(decimalMarker);
+        const nonZeroIndex = inputString.search(/[1-9]/);
 
         return {
-            decimalMarkerIndex,
-            nonZeroIndex,
+            decimalMarkerIndex: decimalMarkerIndex < 0 ? null : decimalMarkerIndex,
+            nonZeroIndex: nonZeroIndex < 0 ? null : nonZeroIndex,
         };
     }
 }

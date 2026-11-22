@@ -51,6 +51,26 @@ const insert = (data: string) => (el: HTMLInputElement) => {
     );
 };
 
+/** Pastes `text` through the browser clipboard into the empty field. */
+async function pasteInto(config: Config, text: string): Promise<string> {
+    const m = await mount(MaskHarnessComponent, config);
+    const scratch = document.createElement('input');
+    document.body.appendChild(scratch);
+    try {
+        scratch.value = text;
+        scratch.focus();
+        scratch.select();
+        await userEvent.copy();
+    } finally {
+        scratch.remove();
+    }
+    m.focus('#masked');
+    await userEvent.paste();
+    await m.settle();
+    const el = m.get('#masked');
+    return `${el.value}|${m.component.form.value}`;
+}
+
 describe('editing a date in a real browser', () => {
     it('types a day over a selected day without touching the year (#1713)', async () => {
         const date = { mask: 'd0/M0/0000' };
@@ -81,5 +101,20 @@ describe('editing a date in a real browser', () => {
         expect(await edit(kcp, '15062020', 0, 0, keys('2'))).toBe('25/06/2020|1|25062020');
         expect(await edit(kcp, '15062020', 3, 3, keys('1'))).toBe('15/06/2020|3|15062020');
         expect(await edit(kcp, '', 0, 0, keys('00'))).toBe('0_/__/____|1|0');
+    });
+
+    it('types a run inserted into a complete date over the digits that follow it (#1747)', async () => {
+        const date = { mask: 'd0/M0/0000' };
+        expect(await edit(date, '12052024', 0, 0, insert('31'))).toBe('31/05/2024|2|31052024');
+        expect(await edit(date, '12052024', 6, 6, insert('19'))).toBe('12/05/1924|8|12051924');
+        expect(await edit(date, '12052024', 3, 5, insert('11'))).toBe('12/11/2024|5|12112024');
+    });
+
+    it('rejects a pasted keepCharacterPositions date with a field out of range (#1748)', async () => {
+        const kcp = { mask: 'd0/M0/0000', keepCharacterPositions: true };
+        expect(await pasteInto(kcp, '00062020')).toBe('|');
+        expect(await pasteInto(kcp, '31132020')).toBe('|');
+        expect(await pasteInto(kcp, '15062020')).toBe('15/06/2020|15062020');
+        expect(await pasteInto({ ...kcp, showMaskTyped: true }, '00062020')).toBe('__/__/____|');
     });
 });

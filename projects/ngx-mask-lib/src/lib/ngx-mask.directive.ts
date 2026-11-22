@@ -31,7 +31,9 @@ import type { NgxMaskConfig } from './ngx-mask.config';
 import { NGX_MASK_CONFIG, resolveMaskAlias, timeMasks, withoutValidation } from './ngx-mask.config';
 import {
     isDateTimeMask,
+    isPasteOutOfRange,
     leadZeroDateTimeCaret,
+    overwriteDateRun,
     overwriteDateSlot,
     overwriteFullDateValue,
     setUserEdit,
@@ -617,13 +619,15 @@ export class NgxMaskDirective
             return notFilled(this._validateTime(processedValue));
         }
         if (maskValue === MaskExpression.EMAIL_MASK) {
-            const emailPattern = /^[^@]+@[^@]+\.[^@]+$/;
-
-            if (!emailPattern.test(processedValue) && processedValue) {
-                return notFilled(this._createValidationError(processedValue));
-            } else {
+            if (!processedValue) {
                 return notFilled(null);
             }
+            // Split instead of a regex: `/^[^@]+@[^@]+\.[^@]+$/` backtracks polynomially (ReDoS, #1763).
+            const [local, domain, ...extra] = String(processedValue).split('@');
+            const isEmail =
+                !extra.length && !!local && !!domain && domain.slice(1, -1).includes('.');
+
+            return notFilled(isEmail ? null : this._createValidationError(processedValue));
         }
         if (processedValue && processedValue.length >= 1) {
             let counterOfOpt = 0;
@@ -724,10 +728,11 @@ export class NgxMaskDirective
                         // alternative can still be complete: it must stop exactly at a
                         // special-character boundary of the selected alternative and satisfy
                         // the length requirement of another (shorter) alternative.
-                        if (this._isCompleteAlternativeBoundary(processedValue)) {
-                            return notFilled(null);
-                        }
-                        return notFilled(this._createValidationError(processedValue));
+                        return notFilled(
+                            this._isCompleteAlternativeBoundary(processedValue)
+                                ? null
+                                : this._createValidationError(processedValue)
+                        );
                     }
                 }
                 if (array.length > 1) {
@@ -968,6 +973,21 @@ export class NgxMaskDirective
                         ? this._maskService.removeMask(el.value.slice(0, caret))
                         : null;
 
+                // A paste that puts a date or time field out of range is rejected, as a typed
+                // digit is (#1748): the display stays as it was.
+                if (
+                    this._justPasted &&
+                    this._maskService.keepCharacterPositions &&
+                    isPasteOutOfRange(this._maskService, this._maskService.removeMask(el.value))
+                ) {
+                    const svc = this._maskService;
+                    el.value = svc.actualValue || `${svc.prefix}${svc.maskIsShown}${svc.suffix}`;
+                    this._inputValue = el.value;
+                    this._justPasted = false;
+                    el.setSelectionRange(Number(svc.selStart), Number(svc.selStart));
+                    return;
+                }
+
                 if (
                     this._maskService.keepCharacterPositions &&
                     this._maskService.placeHolderCharacter.length === 1 &&
@@ -1022,10 +1042,20 @@ export class NgxMaskDirective
                     this._maskService.suffix ||
                     this._maskService.keepCharacterPositions ||
                     this._maskService.hiddenInput;
+                // Several characters inserted at once are typed one by one (#1747).
+                const run = this._isBulkInsertion(e) ? (e as InputEvent).data : null;
                 const overwrite =
                     keepsFullDateOverwrite || isDeletion
                         ? null
-                        : overwriteDateSlot(this._maskService, preEditValue, el.value, position);
+                        : run
+                          ? overwriteDateRun(
+                                this._maskService,
+                                preEditValue,
+                                el.value,
+                                position,
+                                run
+                            )
+                          : overwriteDateSlot(this._maskService, preEditValue, el.value, position);
                 if (overwrite) {
                     el.value = overwrite.value;
                     this._inputValue = overwrite.value;

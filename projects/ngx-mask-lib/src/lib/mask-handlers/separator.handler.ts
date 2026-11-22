@@ -1,4 +1,3 @@
-import { escapeRegExp } from '../ngx-mask.utils';
 import type { MaskHandlerFn } from './mask-handler.types';
 
 /** Characters rejected while typing a separator mask (' ' stands for any whitespace). */
@@ -29,13 +28,8 @@ export const separatorHandler: MaskHandlerFn = function (state, params) {
     let { processedValue, processedPosition, backspaceShift, shift, stepBack } = state;
     let result: string;
 
-    if (
-        processedValue.match('[wа-яА-Я]') ||
-        processedValue.match('[ЁёА-я]') ||
-        processedValue.match('[a-z]|[A-Z]') ||
-        processedValue.match(/[-@#!$%\\^&*()_£¬'+|~=`{}\]:";<>.?/]/) ||
-        processedValue.match('[^A-Za-z0-9,]')
-    ) {
+    // Anything but a digit or a comma (letters, punctuation, any script) is stripped.
+    if (/[^0-9,]/.test(processedValue)) {
         processedValue = this._stripToDecimal(processedValue);
     }
 
@@ -68,7 +62,7 @@ export const separatorHandler: MaskHandlerFn = function (state, params) {
         this._shift.clear();
         const res =
             result.includes('-') && this.prefix && this.allowNegativeNumbers
-                ? `${'-'}${this.prefix}${result.split('-').join('')}${this.suffix}`
+                ? `-${this.prefix}${result.split('-').join('')}${this.suffix}`
                 : result.length
                   ? `${this.prefix}${result}${this.suffix}`
                   : this.instantPrefix
@@ -187,28 +181,19 @@ export const separatorHandler: MaskHandlerFn = function (state, params) {
     // leading zeros before a non-zero digit were already removed above, and an
     // all-zero remainder must keep its zeros (issues #1355/#1578).
     if (precision === 0 && !backspaced) {
-        processedValue = this.allowNegativeNumbers
-            ? processedValue.length > 2 &&
-              processedValue[0] === '-' &&
-              processedValue[1] === '0' &&
-              processedValue[2] !== this.thousandSeparator &&
-              processedValue[2] !== ',' &&
-              processedValue[2] !== '.'
-                ? '-' + processedValue.slice(2, processedValue.length)
-                : processedValue[0] === '0' &&
-                    processedValue.length > 1 &&
-                    processedValue[1] !== this.thousandSeparator &&
-                    processedValue[1] !== ',' &&
-                    processedValue[1] !== '.'
-                  ? processedValue.slice(1, processedValue.length)
-                  : processedValue
-            : processedValue.length > 1 &&
-                processedValue[0] === '0' &&
-                processedValue[1] !== this.thousandSeparator &&
-                processedValue[1] !== ',' &&
-                processedValue[1] !== '.'
-              ? processedValue.slice(1, processedValue.length)
-              : processedValue;
+        const isPlain = (index: number) =>
+            ![this.thousandSeparator, ',', '.'].includes(processedValue[index] as string);
+        if (
+            this.allowNegativeNumbers &&
+            processedValue.length > 2 &&
+            processedValue[0] === '-' &&
+            processedValue[1] === '0' &&
+            isPlain(2)
+        ) {
+            processedValue = '-' + processedValue.slice(2);
+        } else if (processedValue.length > 1 && processedValue[0] === '0' && isPlain(1)) {
+            processedValue = processedValue.slice(1);
+        }
     } else {
         if (processedValue[0] === decimalMarker && processedValue.length > 1 && !backspaced) {
             processedValue = '0' + processedValue.slice(0, processedValue.length + 1);
@@ -261,7 +246,7 @@ export const separatorHandler: MaskHandlerFn = function (state, params) {
     );
     const allowedChars = [this.thousandSeparator, ...[this.decimalMarker].flat()];
     const invalidChars = INVALID_SEPARATOR_CHARS.filter((char) => !allowedChars.includes(char))
-        .map((char) => (char === ' ' ? '\\s' : escapeRegExp(char)))
+        .map((char) => this._charToRegExpExpression(char))
         .join('');
 
     const invalidCharRegexp = new RegExp('[' + invalidChars + ']');
