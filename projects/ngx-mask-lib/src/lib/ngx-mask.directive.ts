@@ -1193,7 +1193,7 @@ export class NgxMaskDirective
                 // A keystroke the mask rejected (the edit changed the field, the display did not)
                 // leaves the caret where it was typed, not past it or at the end of the value
                 // (#1720, #1746). Typed text only: `caret - 1` is the pre-edit caret of a single
-                // character, not of a pasted run.
+                // character, not of a pasted run. A key the mask took lands in the display at the caret.
                 if (
                     inputType === 'insertText' &&
                     !isDeletion &&
@@ -1201,7 +1201,8 @@ export class NgxMaskDirective
                     !overwrite &&
                     this._maskService.selStart === this._maskService.selEnd &&
                     el.value === preEditValue &&
-                    editedValue !== preEditValue
+                    editedValue !== preEditValue &&
+                    el.value[caret - 1] !== (e as InputEvent).data
                 ) {
                     positionToApply = caret - 1;
                 }

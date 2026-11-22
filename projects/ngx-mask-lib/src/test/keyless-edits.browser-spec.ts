@@ -1,6 +1,6 @@
 import { userEvent } from 'vitest/browser';
 import type { Mounted } from './utils/browser-harness';
-import { mount } from './utils/browser-harness';
+import { copyToClipboard, mount } from './utils/browser-harness';
 import { MaskHarnessComponent } from './utils/mask-harness.component';
 
 /**
@@ -16,16 +16,7 @@ const state = (m: Mounted<MaskHarnessComponent>): string => {
 };
 
 async function paste(m: Mounted<MaskHarnessComponent>, text: string): Promise<void> {
-    const scratch = document.createElement('input');
-    document.body.appendChild(scratch);
-    try {
-        scratch.value = text;
-        scratch.focus();
-        scratch.select();
-        await userEvent.copy();
-    } finally {
-        scratch.remove();
-    }
+    await copyToClipboard(text);
     m.focus('#masked');
 }
 

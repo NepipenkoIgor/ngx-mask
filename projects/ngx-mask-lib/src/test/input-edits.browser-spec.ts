@@ -1,6 +1,6 @@
 import { userEvent } from 'vitest/browser';
 import type { Mounted } from './utils/browser-harness';
-import { mount } from './utils/browser-harness';
+import { copyToClipboard, mount } from './utils/browser-harness';
 import { MaskHarnessComponent } from './utils/mask-harness.component';
 
 /**
@@ -14,19 +14,6 @@ const state = (m: Mounted<MaskHarnessComponent>): string => {
     return `${el.value}|${m.component.form.value}|${el.selectionStart}`;
 };
 
-async function copy(text: string): Promise<void> {
-    const scratch = document.createElement('input');
-    document.body.appendChild(scratch);
-    try {
-        scratch.value = text;
-        scratch.focus();
-        scratch.select();
-        await userEvent.copy();
-    } finally {
-        scratch.remove();
-    }
-}
-
 describe('input edits (real browser)', () => {
     it('#1746 a rejected letter keeps the caret on a non-separator mask', async () => {
         const m = await mount(MaskHarnessComponent, { mask: '000-000' });
@@ -37,6 +24,17 @@ describe('input edits (real browser)', () => {
         await userEvent.keyboard('a');
         await m.settle();
         expect(state(m)).toBe('123-456|123456|2');
+    });
+
+    it('#1746 an accepted digit that drops an identical trailing one advances the caret', async () => {
+        const m = await mount(MaskHarnessComponent, { mask: '000-000' });
+        m.component.form.setValue('111111');
+        await m.settle();
+        m.focus('#masked');
+        m.get('#masked').setSelectionRange(2, 2);
+        await userEvent.keyboard('1');
+        await m.settle();
+        expect(state(m)).toBe('111-111|111111|3');
     });
 
     it('#1749 a keyless insert keeps the showMaskTyped suffix', async () => {
@@ -80,7 +78,7 @@ describe('input edits (real browser)', () => {
             showMaskTyped: true,
         });
         await m.type('#masked', '12');
-        await copy('345');
+        await copyToClipboard('345');
         m.focus('#masked');
         await userEvent.paste();
         await m.settle();

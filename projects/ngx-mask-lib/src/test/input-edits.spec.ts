@@ -60,6 +60,34 @@ describe('Directive: Mask (input edits)', () => {
         expect(el.selectionStart).toBe(2);
     });
 
+    it('#1746 advances the caret for an accepted digit that drops an identical trailing one', async () => {
+        await setup((c) => c.mask.set('000-000'), '111111');
+        const el = input();
+        expect(el.value).toBe('111-111');
+        el.setSelectionRange(2, 2);
+        edit('1', 'insertText', true);
+
+        expect(el.value).toBe('111-111');
+        expect(el.selectionStart).toBe(3);
+    });
+
+    it('#1720 keeps the caret for a digit typed into a full separator value', async () => {
+        await setup((c) => {
+            c.mask.set('separator.2');
+            c.prefix.set('$');
+            c.suffix.set(' USD');
+            c.showMaskTyped.set(true);
+        }, '1234.56');
+        const el = input();
+        const before = el.value;
+        const end = before.length - ' USD'.length;
+        el.setSelectionRange(end, end);
+        edit('5', 'insertText', true);
+
+        expect(el.value).toBe(before);
+        expect(el.selectionStart).toBe(end);
+    });
+
     it('#1749 keeps the suffix after a keyless insert with showMaskTyped', async () => {
         await setup((c) => {
             c.mask.set('0 000');
