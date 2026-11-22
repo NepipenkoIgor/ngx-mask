@@ -147,3 +147,46 @@ describe('Separator: leadZero with a comma decimal string (real browser)', () =>
         expect(m.get('#masked').value).toBe(`1${separator}234${separator}567,50`);
     });
 });
+
+describe('Separator: leading-zero comma decimal with an array decimalMarker (real browser, #1726)', () => {
+    it.each([
+        ['0,', '0,', 0],
+        ['0,1', '0,1', 0.1],
+        ['0,05', '0,05', 0.05],
+        ['0.1', '0.1', 0.1],
+        ['0,5.', '0,5', 0.5],
+        ['1,5.', '1,5', 1.5],
+    ])('types %s into an empty field', async (keys, shown, model) => {
+        const m = await mount(MaskHarnessComponent, {
+            mask: 'separator.2',
+            thousandSeparator: ' ',
+            decimalMarker: ['.', ','],
+        });
+
+        await m.type('#masked', keys);
+
+        expect(m.get('#masked').value).toBe(shown);
+        expect(Number(m.component.form.value)).toBe(model);
+    });
+});
+
+describe('Separator: a digit typed into the trailing placeholder before the suffix (real browser, #1720)', () => {
+    it('keeps the display and the caret when typing right before the suffix', async () => {
+        const m = await mount(MaskHarnessComponent, {
+            mask: 'separator.2',
+            prefix: '$',
+            suffix: ' USD',
+            showMaskTyped: true,
+        });
+
+        m.component.form.setValue(1234.56);
+        await m.settle();
+        const before = m.get('#masked').value;
+        const end = before.length - ' USD'.length;
+        m.select('#masked', end, end);
+        await m.type('#masked', '5');
+        expect(m.get('#masked').value).toBe(before);
+        expect(m.get('#masked').selectionStart).toBe(end);
+        expect(m.component.form.value).toBe(1234.56);
+    });
+});

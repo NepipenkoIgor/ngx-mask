@@ -44,7 +44,12 @@ export const separatorHandler: MaskHandlerFn = function (state, params) {
     let decimalMarker = this.decimalMarker;
 
     if (Array.isArray(this.decimalMarker)) {
-        decimalMarker = this._activeDecimalMarker(this.actualValue);
+        // The marker already in the value wins over a second one typed after it ('0,5.');
+        // only a value with no marker yet takes the typed one ('0' then ',', #1726).
+        const current = this._activeDecimalMarker(this.actualValue);
+        decimalMarker = this.actualValue.includes(current)
+            ? current
+            : this._activeDecimalMarker(processedValue);
     }
 
     // Issues #733/#1414/#1315: opt-in "banking" typing mode — typed digits fill
