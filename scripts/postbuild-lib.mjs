@@ -1,6 +1,6 @@
 // Post-build step for the published library (dist/ngx-mask-lib):
 // 1. copy the docs, 2. guard that the bundle really needs no tslib,
-// 3. drop the `tslib` dependency that ng-packagr injects unconditionally.
+// 3. drop a leftover `tslib` dependency and an empty `dependencies` block.
 import { copyFileSync, existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
