@@ -25,6 +25,10 @@ export class NgxMaskService extends NgxMaskApplierService {
      * unchanged); an echo that differs (a normalised or re-typed value) still reaches the form.
      */
     public writtenValue: { value: unknown } | null = null;
+    /** Whether `value` is exactly the raw value `writeValue` is currently applying. */
+    public isWrittenEcho(value: unknown): boolean {
+        return !!this.writtenValue && Object.is(this.writtenValue.value, value);
+    }
     /**
      * Set by the directive's keepCharacterPositions handling for the current edit:
      * true — the directive fully resolved the resulting display value into actualValue,
@@ -816,12 +820,7 @@ export class NgxMaskService extends NgxMaskApplierService {
         // The echo of a write the mask left unchanged is the written model value itself: it is
         // already in model space, so it skips the transform (which would otherwise make the model
         // differ by when the write is applied, see `writtenValue`).
-        const outputTransformFn = (v: unknown): unknown =>
-            !this.outputTransformFn || (this.writtenValue && Object.is(this.writtenValue.value, v))
-                ? v
-                : this.outputTransformFn(
-                      v as Parameters<NonNullable<NgxMaskConfig['outputTransformFn']>>[0]
-                  );
+        const outputTransformFn = this.outputTransformFn;
 
         this.writingValue = false;
         this.maskChanged = false;
@@ -851,34 +850,33 @@ export class NgxMaskService extends NgxMaskApplierService {
         // email mask always reports the full address, whatever dropSpecialCharacters says.
         const keepSpecialCharacters = this.maskExpression === MaskExpression.EMAIL_MASK;
 
+        let result;
         if (Array.isArray(this.dropSpecialCharacters) && !keepSpecialCharacters) {
-            this.onChange(
-                outputTransformFn(
-                    this._toNumber(
-                        this._checkSymbols(
-                            this._removeMask(
-                                this._removeSuffix(this._removePrefix(inputValue)),
-                                this.dropSpecialCharacters
-                            )
-                        )
+            result = this._toNumber(
+                this._checkSymbols(
+                    this._removeMask(
+                        this._removeSuffix(this._removePrefix(inputValue)),
+                        this.dropSpecialCharacters
                     )
                 )
             );
         } else if (
             !keepSpecialCharacters &&
-            (this.dropSpecialCharacters ||
-                (!this.dropSpecialCharacters && this.prefix === inputValue))
+            (this.dropSpecialCharacters || this.prefix === inputValue)
         ) {
-            this.onChange(
-                outputTransformFn(
-                    this._toNumber(
-                        this._checkSymbols(this._removeSuffix(this._removePrefix(inputValue)))
-                    )
-                )
+            result = this._toNumber(
+                this._checkSymbols(this._removeSuffix(this._removePrefix(inputValue)))
             );
         } else {
-            this.onChange(outputTransformFn(this._toNumber(inputValue)));
+            result = this._toNumber(inputValue);
         }
+        this.onChange(
+            !outputTransformFn || this.isWrittenEcho(result)
+                ? result
+                : outputTransformFn(
+                      result as Parameters<NonNullable<NgxMaskConfig['outputTransformFn']>>[0]
+                  )
+        );
     }
 
     private _toNumber(value: string | number | undefined | null) {
