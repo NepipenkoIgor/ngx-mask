@@ -330,9 +330,10 @@ describe('masks the overwrite leaves alone, in a real browser', () => {
             keepCharacterPositions: true,
             showMaskTyped: true,
         };
+        // 35 is no day: the slot rejects the digit (#1724) instead of repairing the field
         expect(await typedAt(kcp, '15062020', 0, '3')).toMatchObject({
-            value: '35/06/2020',
-            model: '35062020',
+            value: '15/06/2020',
+            model: '15062020',
         });
     });
 

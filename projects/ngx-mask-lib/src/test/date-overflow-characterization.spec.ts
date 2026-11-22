@@ -1393,7 +1393,8 @@ describe('date overflow characterization', () => {
                     paste: '00062020',
                     expected: { value: '00/06/2020', caret: 10, model: '00062020' },
                 },
-                { keys: '00', expected: { value: '00/__/____', caret: 2, model: '00' } },
+                // #1724: a second 0 would make the day 00, so the key is rejected
+                { keys: '00', expected: { value: '0_/__/____', caret: 1, model: '0' } },
                 // the caret stays at the end of the skeleton, as after focusing the empty field
                 { keys: '12', expected: { value: '12/__/____', caret: 2, model: '12' } },
             ]
@@ -1684,12 +1685,27 @@ describe('date overflow characterization', () => {
                 showMaskTyped: true,
             },
             [
-                // not overwritten here: kcp writes the digit into its slot and renders it as it is (no
-                // range check); the parent's d0/M0/0000 overwrite still drops the character after it
+                // kcp writes the digit into its slot, and rejects one that puts the field out of range
+                // (#1724): 3 over the 1 of 15 would make the day 35
                 {
                     initial: '15062020',
                     edit: { start: 0, end: 0, key: '3' },
-                    expected: { value: '35/06/2020', caret: 3, model: '35062020' },
+                    expected: { value: '15/06/2020', caret: 0, model: '15062020' },
+                },
+                {
+                    initial: '15062020',
+                    edit: { start: 0, end: 0, key: '2' },
+                    expected: { value: '25/06/2020', caret: 1, model: '25062020' },
+                },
+                {
+                    initial: '15062020',
+                    edit: { start: 4, end: 4, key: '3' },
+                    expected: { value: '15/03/2020', caret: 5, model: '15032020' },
+                },
+                {
+                    initial: '15062020',
+                    edit: { start: 3, end: 3, key: '1' },
+                    expected: { value: '15/06/2020', caret: 3, model: '15062020' },
                 },
             ]
         );
@@ -1726,9 +1742,9 @@ describe('date overflow characterization', () => {
             ]
         );
 
-        // Without leadZeroDateTime nothing is repaired: an edit overwriteDateSlot declines (an
-        // out-of-range field, a selection longer than one character) keeps the parent's d0/M0/0000
-        // overwrite, which drops the character after the typed one, as before PR2.
+        // Without leadZeroDateTime a field is repaired without padding (#1713); an edit
+        // overwriteDateSlot still declines (a lone 0, a selection beyond one field) keeps the
+        // parent's d0/M0/0000 overwrite, which drops the character after the typed one.
         section(
             'd0/M0/0000 without leadZeroDateTime overwrites a field that stays in range',
             { mask: 'd0/M0/0000' },
@@ -1738,11 +1754,11 @@ describe('date overflow characterization', () => {
                     edit: { start: 1, end: 1, key: '9' },
                     expected: { value: '19/06/2020', caret: 2, model: '19062020' },
                 },
-                // current behaviour: 4 over the 1 of 15 is the day 45, so the parent overwrite runs and the digits shift
+                // #1713: 4 over the 1 of 15 is the day 45, so it replaces the day and the year stays
                 {
                     initial: '15062020',
                     edit: { start: 0, end: 0, key: '4' },
-                    expected: { value: '4/50/6202', caret: 1, model: '4506202' },
+                    expected: { value: '4/06/2020', caret: 1, model: '4062020' },
                 },
                 // current behaviour: the parent overwrite drops the separator after the lone 0, a year digit flows into the month
                 {
@@ -1871,5 +1887,35 @@ describe('date overflow characterization', () => {
                 });
             });
         });
+    });
+    describe('date edits next to the caret, selection and prefix', () => {
+        // #1713: typing into a whole selected field or at the start of a full date without
+        // leadZeroDateTime replaced the field and shifted the digits of the year
+        section('d0/M0/0000 without leadZeroDateTime (#1713)', { mask: 'd0/M0/0000' }, [
+            {
+                initial: '15062020',
+                edit: { start: 0, end: 2, key: '3' },
+                expected: { value: '30/06/2020', caret: 1, model: '30062020' },
+            },
+            {
+                initial: '15062020',
+                edit: { start: 0, end: 2, key: '4' },
+                expected: { value: '4/06/2020', caret: 1, model: '4062020' },
+            },
+            {
+                initial: '15062020',
+                edit: { start: 3, end: 5, key: '5' },
+                expected: { value: '15/5/2020', caret: 4, model: '1552020' },
+            },
+        ]);
+
+        // #1721: Delete over a prefixed date removes the selection only, as without the prefix
+        section('d0/M0/0000 Delete with a prefix (#1721)', { mask: 'd0/M0/0000', prefix: '+7 ' }, [
+            {
+                initial: '15062020',
+                edit: { start: 3, end: 4, key: 'Delete' },
+                expected: { value: '+7 5/06/2020', caret: 3, model: '5062020' },
+            },
+        ]);
     });
 });
