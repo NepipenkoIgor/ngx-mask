@@ -2,7 +2,7 @@ import { userEvent } from 'vitest/browser';
 import { describe, expect, it } from 'vitest';
 
 import type { Mounted } from './utils/browser-harness';
-import { mount } from './utils/browser-harness';
+import { copyToClipboard, mount } from './utils/browser-harness';
 import { MaskHarnessComponent } from './utils/mask-harness.component';
 
 /**
@@ -48,16 +48,7 @@ async function written(config: Config, value: string): Promise<Outcome> {
 /** Pastes `text` through the browser clipboard into an empty input. */
 async function pasted(config: Config, text: string): Promise<Outcome> {
     const m = await mount(MaskHarnessComponent, config);
-    const scratch = document.createElement('input');
-    document.body.appendChild(scratch);
-    try {
-        scratch.value = text;
-        scratch.focus();
-        scratch.select();
-        await userEvent.copy();
-    } finally {
-        scratch.remove();
-    }
+    await copyToClipboard(text);
     m.focus('#masked');
     await userEvent.paste();
     await m.settle();

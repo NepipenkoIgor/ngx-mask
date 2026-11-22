@@ -123,3 +123,17 @@ export async function mount<T>(
         settle,
     };
 }
+
+/** Puts `text` on the real clipboard by copying it out of a throwaway input. */
+export async function copyToClipboard(text: string): Promise<void> {
+    const scratch = document.createElement('input');
+    document.body.appendChild(scratch);
+    try {
+        scratch.value = text;
+        scratch.focus();
+        scratch.select();
+        await userEvent.copy();
+    } finally {
+        scratch.remove();
+    }
+}

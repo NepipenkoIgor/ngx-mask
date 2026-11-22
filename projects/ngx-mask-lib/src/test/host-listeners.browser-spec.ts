@@ -1,5 +1,5 @@
 import { userEvent } from 'vitest/browser';
-import { mount } from './utils/browser-harness';
+import { copyToClipboard, mount } from './utils/browser-harness';
 import { MaskHarnessComponent } from './utils/mask-harness.component';
 
 // The directive binds its DOM listeners through `host: {}`; these specs drive every one of them with
@@ -187,16 +187,7 @@ describe('Directive: host listeners (real browser events)', () => {
             m: Awaited<ReturnType<typeof mount<MaskHarnessComponent>>>,
             text: string
         ): Promise<void> => {
-            const scratch = document.createElement('input');
-            document.body.appendChild(scratch);
-            try {
-                scratch.value = text;
-                scratch.focus();
-                scratch.select();
-                await userEvent.copy();
-            } finally {
-                scratch.remove();
-            }
+            await copyToClipboard(text);
             const input = m.get('#masked');
             input.focus();
             await userEvent.paste();
