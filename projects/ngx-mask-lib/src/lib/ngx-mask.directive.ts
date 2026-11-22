@@ -302,6 +302,9 @@ export class NgxMaskDirective
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     public onTouch = () => {};
 
+    /** A value the mask emitted from a write before `registerOnChange`, replayed once it runs. */
+    private _unregisteredEcho: { value: unknown } | null = null;
+
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     private _onValidatorChange = () => {};
 
@@ -310,6 +313,11 @@ export class NgxMaskDirective
         // It pushes the unmasked value into the `value` model so the `valueChange` output fires.
         // registerOnChange() overrides this to additionally invoke Angular's CVA callback.
         this._maskService.onChange = this.onChange = (value: unknown) => {
+            // The first write can land before Angular's `setUpControl` registers its callback: keep
+            // what the mask normalised from it so `registerOnChange` can hand it over (#1754).
+            if (this._maskService.writtenValue && !this._maskService.isWrittenEcho(value)) {
+                this._unregisteredEcho = { value };
+            }
             this._propagateToValueModel(value);
         };
 
@@ -1877,6 +1885,12 @@ export class NgxMaskDirective
             ) {
                 // Let the service we know we are writing value so that triggering onChange function won't happen during applyMask
                 this._maskService.writingValue = true;
+                // The first write emits the value the mask normalised, like a later one: it goes
+                // out as a programmatic write that keeps the control pristine (#1754). An empty
+                // one only renders the skeleton and has nothing to emit.
+                if (inputValue) {
+                    this._maskService.isInitialized = true;
+                }
 
                 // The raw control value: a boxed `{value, disable}` write never equals the plain value
                 // the mask emits, so its echo still replaces the box in the control.
@@ -1960,6 +1974,11 @@ export class NgxMaskDirective
             }
             this._propagateToValueModel(value);
         };
+        if (this._unregisteredEcho) {
+            const { value } = this._unregisteredEcho;
+            this._unregisteredEcho = null;
+            this._emitProgrammaticValue(originalFn, value);
+        }
     }
 
     public registerOnValidatorChange(fn: () => void): void {

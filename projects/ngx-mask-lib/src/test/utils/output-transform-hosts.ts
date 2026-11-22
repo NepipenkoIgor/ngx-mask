@@ -2,6 +2,7 @@ import {
     ChangeDetectionStrategy,
     Component,
     Injector,
+    InjectionToken,
     inject,
     runInInjectionContext,
     signal,
@@ -12,6 +13,10 @@ import { NgxMaskDirective, provideNgxMask } from 'ngx-mask';
 
 /** Visible in the model: shows exactly when `outputTransformFn` ran. */
 export const wrapOutput = (value: unknown): string => `<${String(value)}>`;
+
+/** The initial model value; provide `'1234'` for one the mask normalises to '12-34' (#1754). */
+export const INITIAL_VALUE = new InjectionToken<string>('INITIAL_VALUE');
+const initialValue = (): string => inject(INITIAL_VALUE, { optional: true }) ?? '12-34';
 
 const TEMPLATE_ATTRS =
     'id="masked" mask="00-00" [dropSpecialCharacters]="false" [outputTransformFn]="transform"';
@@ -25,7 +30,7 @@ const TEMPLATE_ATTRS =
 })
 export class TransformReactiveHost {
     public readonly transform = wrapOutput;
-    public readonly control = new FormControl<string | null>('12-34');
+    public readonly control = new FormControl<string | null>(initialValue());
 }
 
 @Component({
@@ -37,7 +42,7 @@ export class TransformReactiveHost {
 })
 export class TransformTemplateHost {
     public readonly transform = wrapOutput;
-    public model: string | null = '12-34';
+    public model: string | null = initialValue();
 }
 
 @Component({
@@ -49,6 +54,6 @@ export class TransformTemplateHost {
 })
 export class TransformSignalHost {
     public readonly transform = wrapOutput;
-    public readonly data = signal({ value: '12-34' });
+    public readonly data = signal({ value: initialValue() });
     public readonly tree = runInInjectionContext(inject(Injector), () => form(this.data));
 }

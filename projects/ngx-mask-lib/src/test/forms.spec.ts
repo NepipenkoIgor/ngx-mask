@@ -695,11 +695,10 @@ describe('Directive: Signal Forms (separator.2 decimal reflow)', () => {
         const inputElement: HTMLInputElement = testFixture.nativeElement.querySelector('input');
 
         // Cross-checked against separator-2.spec.ts: reactive form.setValue('10.2') with
-        // leadZero => '10.20' for the same separator.2 mask (display only). The initial
-        // programmatic write intentionally does NOT emit back to the model (isInitialized
-        // guard in formControlResult), so the model keeps the value it was set with.
+        // leadZero => '10.20' for the same separator.2 mask. The initial write echoes the
+        // normalised value back to the model, as ngModel does (#1754), without dirtying it.
         expect(inputElement.value).equal('10.20');
-        expect(component.signalForm.value().value()).equal('10.2');
+        expect(component.signalForm.value().value()).equal('10.20');
     });
 
     it('should insert the thousand separator while reformatting on signal value change, matching Reactive Forms output for the same input', async () => {
