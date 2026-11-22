@@ -17,29 +17,23 @@ export const percentHandler: MaskHandlerFn = function (state, params) {
         processedValue = this.checkInputPrecision(processedValue, precision);
     }
     const decimalMarker = this._activeDecimalMarker(processedValue);
-    if (
-        processedValue.indexOf(decimalMarker) > 0 &&
-        !this.percentage(processedValue.substring(0, processedValue.indexOf(decimalMarker)))
-    ) {
-        let base: string = processedValue.substring(0, processedValue.indexOf(decimalMarker) - 1);
+    const markerIndex = processedValue.indexOf(decimalMarker);
+    if (markerIndex > 0 && !this.percentage(processedValue.substring(0, markerIndex))) {
+        let base: string = processedValue.substring(0, markerIndex - 1);
         if (
             this.allowNegativeNumbers &&
             processedValue.slice(cursor, cursor + 1) === '-' &&
             !backspaced
         ) {
-            base = processedValue.substring(0, processedValue.indexOf(decimalMarker));
+            base = processedValue.substring(0, markerIndex);
         }
 
-        processedValue = `${base}${processedValue.substring(
-            processedValue.indexOf(decimalMarker),
-            processedValue.length
-        )}`;
+        processedValue = base + processedValue.substring(markerIndex);
     }
-    let value: string;
-    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-    this.allowNegativeNumbers && processedValue.slice(cursor, cursor + 1) === '-'
-        ? (value = `${'-'}${processedValue.slice(cursor + 1, cursor + processedValue.length)}`)
-        : (value = processedValue);
+    const value =
+        this.allowNegativeNumbers && processedValue.slice(cursor, cursor + 1) === '-'
+            ? `-${processedValue.slice(cursor + 1, cursor + processedValue.length)}`
+            : processedValue;
     if (this.percentage(value)) {
         state.result = this._splitPercentZero(processedValue);
     } else {

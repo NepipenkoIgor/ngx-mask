@@ -621,11 +621,11 @@ export class NgxMaskDirective
         if (maskValue === MaskExpression.EMAIL_MASK) {
             const emailPattern = /^[^@]+@[^@]+\.[^@]+$/;
 
-            if (!emailPattern.test(processedValue) && processedValue) {
-                return notFilled(this._createValidationError(processedValue));
-            } else {
-                return notFilled(null);
-            }
+            return notFilled(
+                !emailPattern.test(processedValue) && processedValue
+                    ? this._createValidationError(processedValue)
+                    : null
+            );
         }
         if (processedValue && processedValue.length >= 1) {
             let counterOfOpt = 0;
@@ -726,10 +726,11 @@ export class NgxMaskDirective
                         // alternative can still be complete: it must stop exactly at a
                         // special-character boundary of the selected alternative and satisfy
                         // the length requirement of another (shorter) alternative.
-                        if (this._isCompleteAlternativeBoundary(processedValue)) {
-                            return notFilled(null);
-                        }
-                        return notFilled(this._createValidationError(processedValue));
+                        return notFilled(
+                            this._isCompleteAlternativeBoundary(processedValue)
+                                ? null
+                                : this._createValidationError(processedValue)
+                        );
                     }
                 }
                 if (array.length > 1) {
