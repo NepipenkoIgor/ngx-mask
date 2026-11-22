@@ -1086,6 +1086,18 @@ export class NgxMaskDirective
                     positionToApply = isBareDecimalMarker
                         ? this._getActualInputLength() + 1
                         : this._getActualInputLength();
+                    // A separator keystroke the mask rejected (display unchanged), typed past the
+                    // value into the trailing placeholders, leaves the caret where it was typed,
+                    // not at the end of the value (#1720). Typed text only: `caret - 1` is the
+                    // pre-edit caret of a single character, not of a pasted run.
+                    if (
+                        inputType === 'insertText' &&
+                        !isDeletion &&
+                        el.value === preEditValue &&
+                        this._maskValue().startsWith(MaskExpression.SEPARATOR)
+                    ) {
+                        positionToApply = caret - 1;
+                    }
                 }
                 if (positionToApply < 0) {
                     positionToApply = 0;

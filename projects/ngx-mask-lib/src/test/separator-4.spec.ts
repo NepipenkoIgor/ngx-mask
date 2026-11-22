@@ -121,7 +121,7 @@ describe('Separator: Mask', () => {
         component.decimalMarker.set(['.', ',']);
         equal('0', '0', fixture);
         equal('0.', '0.', fixture);
-        equal('0,', '0.', fixture);
+        equal('0,', '0,', fixture);
         equal('0 ', '0', fixture);
         equal('01', '0.1', fixture);
         equal('0s', '0', fixture);
@@ -683,5 +683,54 @@ describe('Issue #1641: numeric keypad decimal key with a comma decimal marker', 
     it('keeps typing a thousand-separator period working', () => {
         type('1.000');
         expect(input.value).toBe('1.000');
+    });
+});
+
+// Issue #1726: with an array decimalMarker a comma decimal that starts with zero ('0,1') was
+// rewritten to '0.' because the active marker was read from the previous value ('0'), not the typed one.
+describe('Issue #1726: array decimalMarker with a leading-zero comma decimal', () => {
+    let fixture: ComponentFixture<TestMaskComponent>;
+    let component: TestMaskComponent;
+
+    beforeEach(() => {
+        TestBed.configureTestingModule({
+            imports: [ReactiveFormsModule, NgxMaskDirective, TestMaskComponent],
+            providers: [provideNgxMask()],
+        });
+        fixture = TestBed.createComponent(TestMaskComponent);
+        component = fixture.componentInstance;
+        component.mask.set('separator.2');
+        component.decimalMarker.set(['.', ',']);
+        fixture.detectChanges();
+    });
+
+    it("types '0,' and '0,1' with a comma", () => {
+        expect(typeTest('0,', fixture)).toBe('0,');
+        expect(typeTest('0,1', fixture)).toBe('0,1');
+        expect(String(component.form.value)).toBe('0.1');
+    });
+
+    it("types '0.1' with a dot", () => {
+        expect(typeTest('0.1', fixture)).toBe('0.1');
+        expect(String(component.form.value)).toBe('0.1');
+    });
+
+    it("types '-0,5' with a comma when negatives are allowed", () => {
+        component.allowNegativeNumbers.set(true);
+        fixture.detectChanges();
+        expect(typeTest('-0,5', fixture)).toBe('-0,5');
+    });
+
+    it("keeps the marker already typed when a second one follows: '0,5.' and '1,5.'", () => {
+        component.thousandSeparator.set(' ');
+        fixture.detectChanges();
+        expect(typeTest('0,5.', fixture)).toBe('0,5');
+        expect(typeTest('1,5.', fixture)).toBe('1,5');
+    });
+
+    it("displays a written '0,1' model", () => {
+        component.form.setValue('0,1');
+        fixture.detectChanges();
+        expect(fixture.nativeElement.querySelector('input').value).toBe('0,1');
     });
 });
