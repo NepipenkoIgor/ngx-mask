@@ -1,4 +1,4 @@
-import { Component, effect, ElementRef, inject, viewChildren } from '@angular/core';
+import { Component, effect, ElementRef, inject, input, viewChildren } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -17,6 +17,7 @@ import { ScrollService } from './scroll.service';
 })
 class TestCardsComponent {
     public readonly sections = [1, 7, 7];
+    public readonly group = input(1);
     public readonly cards = viewChildren<string, ElementRef<HTMLElement>>('cards', {
         read: ElementRef,
     });
@@ -25,6 +26,7 @@ class TestCardsComponent {
     public constructor() {
         // same wiring as OptionsComponent: cards reach the service before the first render ends
         effect(() => this.scrollService.onScroll(this.cards()));
+        effect(() => this.scrollService.group.set(this.group()));
     }
 }
 
@@ -32,9 +34,11 @@ describe('ScrollService fragment scroll', () => {
     const scrollIntoView = vi.fn();
     const originalScrollIntoView = Element.prototype.scrollIntoView;
 
-    const render = (fragment: string): void => {
+    const render = (fragment: string, group = 1): void => {
         history.replaceState(null, '', `/${fragment}`);
-        TestBed.createComponent(TestCardsComponent).detectChanges();
+        const fixture = TestBed.createComponent(TestCardsComponent);
+        fixture.componentRef.setInput('group', group);
+        fixture.detectChanges();
         TestBed.tick();
     };
 
@@ -55,6 +59,19 @@ describe('ScrollService fragment scroll', () => {
         render('#7');
 
         expect(scrollIntoView).toHaveBeenCalledExactlyOnceWith('anchor-1', { block: 'start' });
+    });
+
+    it('resolves a group-qualified fragment inside its own group', () => {
+        render('#4-7', 4);
+
+        expect(scrollIntoView).toHaveBeenCalledExactlyOnceWith('anchor-1', { block: 'start' });
+    });
+
+    it('does not scroll a fragment that names another group', () => {
+        render('#4-7', 1);
+        render('#7', 4);
+
+        expect(scrollIntoView).not.toHaveBeenCalled();
     });
 
     it('does not scroll when the fragment is empty or matches no section', () => {

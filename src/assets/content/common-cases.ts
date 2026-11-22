@@ -141,6 +141,13 @@ export const ComDocs: ComDoc[] = [
         id: 15,
         anchor: 'lead-zero-date-time',
     },
+    {
+        header: 'Date with leadZeroDateTime',
+        text: 'With leadZeroDateTime a digit that cannot start a valid day or month is padded with a leading zero, and typing into a complete date overwrites the segment instead of shifting it.',
+        code: `<input mask="d0/M0/0000" [leadZeroDateTime]="true" />`,
+        id: 16,
+        anchor: 'date-lead-zero-date-time',
+    },
 ];
 
 export const ComExamples: TExampleConfig<MaskOptions>[] = [
@@ -252,6 +259,12 @@ export const ComExamples: TExampleConfig<MaskOptions>[] = [
         _mask: 'M0/00',
         _leadZeroDateTime: true,
         _showMaskTyped: true,
+        control: { initialValue: '', model: '' },
+    },
+    {
+        _placeholder: 'Date with leadZeroDateTime',
+        _mask: 'd0/M0/0000',
+        _leadZeroDateTime: true,
         control: { initialValue: '', model: '' },
     },
 ];

@@ -51,6 +51,7 @@ import type {
 })
 export class OptionsComponent {
     public readonly cardDocs = input<ComDoc[]>();
+    public readonly group = input<number>(1);
     public readonly cardExamplesConfig = input<(TExampleConfig<MaskOptions> | { _pipe: string })[]>(
         [],
         {
@@ -118,6 +119,10 @@ export class OptionsComponent {
 
                 this.cardExamples.set(runtimeExamples);
             });
+        });
+
+        effect(() => {
+            this.scrollService.group.set(this.group());
         });
 
         effect(() => {

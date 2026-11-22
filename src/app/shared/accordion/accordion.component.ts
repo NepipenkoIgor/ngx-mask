@@ -17,6 +17,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { BodyStylesService } from '@shared/body-styles/body-styles.service';
 import { OpenSourcePath } from '@shared/path/open-source.path';
 import { AnchorLabelPipe } from '@shared/anchor/anchor-label.pipe';
+import { parseFragment, toFragment } from '@shared/fragment/section-fragment';
 
 @Component({
     selector: 'ngxd-accordion',
@@ -29,6 +30,7 @@ import { AnchorLabelPipe } from '@shared/anchor/anchor-label.pipe';
 export class AccordionComponent implements AfterViewInit, OnDestroy {
     public lists = input<ListItem[]>();
     public title = input<string>();
+    public activeGroup = input<number>(1);
 
     public switchCardIndex = output<number>();
 
@@ -71,11 +73,17 @@ export class AccordionComponent implements AfterViewInit, OnDestroy {
 
         window.addEventListener('click', this.clickHandler);
 
-        this.openFirstAccordion();
+        this.openAccordion(this.activeGroup());
 
-        this.fragmentSubscription = this.activatedRoute.fragment.subscribe((itemId) => {
-            if (itemId) {
-                this.itemInAccordion.set(Number(itemId));
+        this.fragmentSubscription = this.activatedRoute.fragment.subscribe((fragment) => {
+            const target = parseFragment(fragment);
+            if (!target) {
+                return;
+            }
+            this.itemInAccordion.set(target.section);
+            if (target.group !== this.activeGroup()) {
+                this.openAccordion(target.group);
+                this.switchCardIndex.emit(target.group);
             }
         });
     }
@@ -98,20 +106,20 @@ export class AccordionComponent implements AfterViewInit, OnDestroy {
         this.switchCardIndex.emit(index);
     }
 
-    public handleClick(idItem: number, scrollTo: string | undefined): void {
+    public handleClick(group: number, idItem: number, scrollTo: string | undefined): void {
         if (this.showAccordion()) {
             this.showAccordionBlock();
         }
-        this.anchorScroll(idItem, scrollTo);
+        this.anchorScroll(group, idItem, scrollTo);
     }
 
-    public anchorScroll(idItem: number, scrollTo: string | undefined): void {
+    public anchorScroll(group: number, idItem: number, scrollTo: string | undefined): void {
         if (isPlatformServer(this.platformId)) {
             return;
         }
         this.itemInAccordion.set(idItem);
         void this.router.navigate(['/'], {
-            fragment: idItem.toString(),
+            fragment: toFragment(group, idItem),
         });
         if (!scrollTo) {
             return;
@@ -132,7 +140,14 @@ export class AccordionComponent implements AfterViewInit, OnDestroy {
         });
     }
 
-    public openFirstAccordion(): void {
-        this.accordion()[0]?.nativeElement.classList.toggle('active');
+    /** Opens the panel of the menu group, closing the others. */
+    public openAccordion(group: number): void {
+        const index = Math.max(
+            0,
+            (this.lists() ?? []).findIndex((list) => list.id === group)
+        );
+        this.accordion().forEach((el, i) =>
+            el.nativeElement.classList.toggle('active', i === index)
+        );
     }
 }

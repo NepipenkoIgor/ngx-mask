@@ -2,6 +2,7 @@ import type { ElementRef } from '@angular/core';
 import { afterNextRender, inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { DOCUMENT, isPlatformServer } from '@angular/common';
+import { DEFAULT_GROUP_ID, parseFragment, toFragment } from '@shared/fragment/section-fragment';
 
 @Injectable()
 export class ScrollService {
@@ -12,6 +13,8 @@ export class ScrollService {
     private readonly platformId = inject<string>(PLATFORM_ID);
 
     public readonly activeCard = signal<number>(1);
+    /** Menu group whose cards are rendered; section ids are only unique inside it. */
+    public readonly group = signal<number>(DEFAULT_GROUP_ID);
 
     private cards = signal<readonly ElementRef<HTMLElement>[]>([]);
     private scrollHandler: (() => void) | null = null;
@@ -28,9 +31,12 @@ export class ScrollService {
 
     /** Native fragment scroll misses the cards: their DOM id is not the section number. */
     private scrollToFragment(): void {
-        const section = this.document.location.hash.slice(1);
+        const target = parseFragment(this.document.location.hash);
+        if (target?.group !== this.group()) {
+            return;
+        }
         this.cards()
-            .find((card) => card.nativeElement.dataset['section'] === section)
+            .find((card) => card.nativeElement.dataset['section'] === String(target.section))
             ?.nativeElement.querySelector('[id]')
             ?.scrollIntoView({ block: 'start' });
     }
@@ -63,7 +69,7 @@ export class ScrollService {
         if (this.activeCard() !== Number(scrollIdCard) && scrollIdCard) {
             this.activeCard.set(Number(scrollIdCard));
             void this.router.navigate(['/'], {
-                fragment: scrollIdCard,
+                fragment: toFragment(this.group(), Number(scrollIdCard)),
             });
         }
     }

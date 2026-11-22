@@ -104,11 +104,11 @@
                             aria-hidden="true"
                             class="cursor-pointer px-2 py-2"
                             [class]="
-                                itemInAccordion() === item.id
+                                activeGroup() === list.id && itemInAccordion() === item.id
                                     ? 'text-accent'
                                     : 'text-text-secondary'
                             "
-                            (click)="handleClick(item.id, item.scrollTo)">
+                            (click)="handleClick(list.id, item.id, item.scrollTo)">
                             {{ item.content }}
                         </p>
                     }

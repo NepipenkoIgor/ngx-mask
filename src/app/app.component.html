@@ -4,11 +4,15 @@
             <ngxd-accordion
                 [lists]="lists"
                 [title]="title"
+                [activeGroup]="selectedCardId()"
                 (switchCardIndex)="switchCard($event)" />
         </div>
         <div class="flex flex-col w-full p-0 mt-[55px]">
             <ngxd-sub-header [subtitle]="subtitle" />
-            <ngxd-options [cardDocs]="docs()" [cardExamples]="examples()" />
+            <ngxd-options
+                [group]="selectedCardId()"
+                [cardDocs]="docs()"
+                [cardExamples]="examples()" />
             <ngxd-footer />
         </div>
     </section>
