@@ -93,18 +93,18 @@
             "prefix": "app",
             "architect": {
                 "build": {
-                    "builder": "@angular/build:ng-packagr",
+                    "builder": "@angular/build:library",
                     "options": {
                         "tsConfig": "projects/ngx-mask-lib/tsconfig.lib.json",
-                        "project": "projects/ngx-mask-lib/ng-package.json"
+                        "outputPath": "dist/ngx-mask-lib",
+                        "deleteOutputPath": false
                     },
                     "configurations": {
                         "production": {
-                            "project": "projects/ngx-mask-lib/ng-package.prod.json",
-                            "tsConfig": "projects/ngx-mask-lib/tsconfig.lib.prod.json"
+                            "tsConfig": "projects/ngx-mask-lib/tsconfig.lib.prod.json",
+                            "deleteOutputPath": true
                         },
                         "development": {
-                            "project": "projects/ngx-mask-lib/ng-package.json",
                             "tsConfig": "projects/ngx-mask-lib/tsconfig.lib.json"
                         }
                     }
