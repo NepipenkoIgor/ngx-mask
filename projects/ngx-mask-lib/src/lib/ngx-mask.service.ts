@@ -297,7 +297,16 @@ export class NgxMaskService extends NgxMaskApplierService {
             const value = this.dropSpecialCharacters
                 ? this.removeMask(this.actualValue)
                 : this.actualValue;
-            this.formControlResult(value);
+            // The edit is rendered as it stands, so it becomes the value the next one is compared
+            // with (else a later edit that restores the previous value emits nothing), and an
+            // edit that left the value as it was emits nothing either.
+            const changed =
+                this.removeMask(this.actualValue) !== this.removeMask(this.currentValue);
+            this.previousValue = this.currentValue;
+            this.currentValue = this.actualValue;
+            if (changed) {
+                this.formControlResult(value);
+            }
             return this.actualValue
                 ? this.actualValue
                 : `${this.prefix}${this.maskIsShown}${this.suffix}`;
