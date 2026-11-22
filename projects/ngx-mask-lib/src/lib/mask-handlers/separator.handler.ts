@@ -1,4 +1,3 @@
-import { MaskExpression } from '../ngx-mask-expression.enum';
 import { escapeRegExp } from '../ngx-mask.utils';
 import type { MaskHandlerFn } from './mask-handler.types';
 
@@ -68,15 +67,13 @@ export const separatorHandler: MaskHandlerFn = function (state, params) {
         result = this._formatFromDecimals(processedValue, precision, decimalMarker as string);
         this._shift.clear();
         const res =
-            result.includes(MaskExpression.MINUS) && this.prefix && this.allowNegativeNumbers
-                ? `${MaskExpression.MINUS}${this.prefix}${result
-                      .split(MaskExpression.MINUS)
-                      .join(MaskExpression.EMPTY_STRING)}${this.suffix}`
+            result.includes('-') && this.prefix && this.allowNegativeNumbers
+                ? `${'-'}${this.prefix}${result.split('-').join('')}${this.suffix}`
                 : result.length
                   ? `${this.prefix}${result}${this.suffix}`
                   : this.instantPrefix
                     ? this.prefix
-                    : MaskExpression.EMPTY_STRING;
+                    : '';
         // Pin the caret to the end of the value part: every keystroke reshapes
         // the whole string, so the in-place caret position is meaningless here.
         cb(res.length - this.suffix.length - processedPosition, true);
@@ -96,7 +93,7 @@ export const separatorHandler: MaskHandlerFn = function (state, params) {
             !!char &&
             char !== this.thousandSeparator &&
             (Array.isArray(this.decimalMarker)
-                ? this.decimalMarker.includes(char as MaskExpression.COMMA | MaskExpression.DOT)
+                ? this.decimalMarker.includes(char as ',' | '.')
                 : char === this.decimalMarker);
         const prefixOffset =
             startsWithPrefix && !prefixAlreadyRemovedByCaller ? this.prefix.length : 0;
@@ -126,21 +123,18 @@ export const separatorHandler: MaskHandlerFn = function (state, params) {
         const markerPositions: number[] = [];
         for (let i = 0; i < processedValue.length; i++) {
             const char = processedValue[i] as string;
-            if (
-                char !== this.thousandSeparator &&
-                this.decimalMarker.includes(char as MaskExpression.COMMA | MaskExpression.DOT)
-            ) {
+            if (char !== this.thousandSeparator && this.decimalMarker.includes(char as ',' | '.')) {
                 markerPositions.push(i);
             }
         }
         if (markerPositions.length > 1) {
             const lastMarkerPosition = markerPositions[markerPositions.length - 1];
             processedValue = processedValue
-                .split(MaskExpression.EMPTY_STRING)
+                .split('')
                 .filter(
                     (_, index) => index === lastMarkerPosition || !markerPositions.includes(index)
                 )
-                .join(MaskExpression.EMPTY_STRING);
+                .join('');
         }
     }
 
@@ -149,7 +143,7 @@ export const separatorHandler: MaskHandlerFn = function (state, params) {
             processedValue,
             decimalMarker as '.' | ','
         );
-        const zeroIndexMinus = processedValue[0] === MaskExpression.MINUS;
+        const zeroIndexMinus = processedValue[0] === '-';
         const zeroIndexDecimalMarker = processedValue[0] === decimalMarker;
         const firstIndexDecimalMarker = processedValue[1] === decimalMarker;
 
@@ -160,12 +154,12 @@ export const separatorHandler: MaskHandlerFn = function (state, params) {
             (zeroIndexDecimalMarker && !nonZeroIndex) ||
             (zeroIndexMinus && firstIndexDecimalMarker && !nonZeroIndex)
         ) {
-            processedValue = MaskExpression.NUMBER_ZERO;
+            processedValue = '0';
         }
 
         if (decimalMarkerIndex && nonZeroIndex && zeroIndexMinus && processedPosition === 1) {
             if (decimalMarkerIndex < nonZeroIndex || decimalMarkerIndex > nonZeroIndex) {
-                processedValue = MaskExpression.MINUS + processedValue.slice(nonZeroIndex);
+                processedValue = '-' + processedValue.slice(nonZeroIndex);
             }
         }
 
@@ -174,7 +168,7 @@ export const separatorHandler: MaskHandlerFn = function (state, params) {
         // check would treat it as "no decimal marker" and slice the marker off.
         if (decimalMarkerIndex === null && nonZeroIndex && processedValue.length > nonZeroIndex) {
             processedValue = zeroIndexMinus
-                ? MaskExpression.MINUS + processedValue.slice(nonZeroIndex)
+                ? '-' + processedValue.slice(nonZeroIndex)
                 : processedValue.slice(nonZeroIndex);
         }
 
@@ -194,34 +188,33 @@ export const separatorHandler: MaskHandlerFn = function (state, params) {
     if (precision === 0 && !backspaced) {
         processedValue = this.allowNegativeNumbers
             ? processedValue.length > 2 &&
-              processedValue[0] === MaskExpression.MINUS &&
-              processedValue[1] === MaskExpression.NUMBER_ZERO &&
+              processedValue[0] === '-' &&
+              processedValue[1] === '0' &&
               processedValue[2] !== this.thousandSeparator &&
-              processedValue[2] !== MaskExpression.COMMA &&
-              processedValue[2] !== MaskExpression.DOT
+              processedValue[2] !== ',' &&
+              processedValue[2] !== '.'
                 ? '-' + processedValue.slice(2, processedValue.length)
-                : processedValue[0] === MaskExpression.NUMBER_ZERO &&
+                : processedValue[0] === '0' &&
                     processedValue.length > 1 &&
                     processedValue[1] !== this.thousandSeparator &&
-                    processedValue[1] !== MaskExpression.COMMA &&
-                    processedValue[1] !== MaskExpression.DOT
+                    processedValue[1] !== ',' &&
+                    processedValue[1] !== '.'
                   ? processedValue.slice(1, processedValue.length)
                   : processedValue
             : processedValue.length > 1 &&
-                processedValue[0] === MaskExpression.NUMBER_ZERO &&
+                processedValue[0] === '0' &&
                 processedValue[1] !== this.thousandSeparator &&
-                processedValue[1] !== MaskExpression.COMMA &&
-                processedValue[1] !== MaskExpression.DOT
+                processedValue[1] !== ',' &&
+                processedValue[1] !== '.'
               ? processedValue.slice(1, processedValue.length)
               : processedValue;
     } else {
         if (processedValue[0] === decimalMarker && processedValue.length > 1 && !backspaced) {
-            processedValue =
-                MaskExpression.NUMBER_ZERO + processedValue.slice(0, processedValue.length + 1);
+            processedValue = '0' + processedValue.slice(0, processedValue.length + 1);
             this.plusOnePosition = true;
         }
         if (
-            processedValue[0] === MaskExpression.NUMBER_ZERO &&
+            processedValue[0] === '0' &&
             processedValue[1] !== decimalMarker &&
             processedValue[1] !== this.thousandSeparator &&
             !backspaced
@@ -237,16 +230,15 @@ export const separatorHandler: MaskHandlerFn = function (state, params) {
         if (
             this.allowNegativeNumbers &&
             !backspaced &&
-            processedValue[0] === MaskExpression.MINUS &&
-            (processedValue[1] === decimalMarker ||
-                processedValue[1] === MaskExpression.NUMBER_ZERO)
+            processedValue[0] === '-' &&
+            (processedValue[1] === decimalMarker || processedValue[1] === '0')
         ) {
             processedValue =
                 processedValue[1] === decimalMarker && processedValue.length > 2
                     ? processedValue.slice(0, 1) +
-                      MaskExpression.NUMBER_ZERO +
+                      '0' +
                       processedValue.slice(1, processedValue.length)
-                    : processedValue[1] === MaskExpression.NUMBER_ZERO &&
+                    : processedValue[1] === '0' &&
                         processedValue.length > 2 &&
                         processedValue[2] !== decimalMarker
                       ? processedValue.slice(0, 2) +
@@ -289,8 +281,7 @@ export const separatorHandler: MaskHandlerFn = function (state, params) {
         precision
     );
 
-    const commaShift: number =
-        result.indexOf(MaskExpression.COMMA) - processedValue.indexOf(MaskExpression.COMMA);
+    const commaShift: number = result.indexOf(',') - processedValue.indexOf(',');
     const shiftStep: number = result.length - processedValue.length;
     const backspacedDecimalMarkerWithSeparatorLimit =
         backspaced && result.length < inputValue.length - this.suffix.length && this.separatorLimit;
@@ -323,11 +314,8 @@ export const separatorHandler: MaskHandlerFn = function (state, params) {
     } else if (
         (commaShift !== 0 &&
             processedPosition > 0 &&
-            !(
-                result.indexOf(MaskExpression.COMMA) >= processedPosition && processedPosition > 3
-            )) ||
-        (!(result.indexOf(MaskExpression.DOT) >= processedPosition && processedPosition > 3) &&
-            shiftStep <= 0)
+            !(result.indexOf(',') >= processedPosition && processedPosition > 3)) ||
+        (!(result.indexOf('.') >= processedPosition && processedPosition > 3) && shiftStep <= 0)
     ) {
         this._shift.clear();
         backspaceShift = true;

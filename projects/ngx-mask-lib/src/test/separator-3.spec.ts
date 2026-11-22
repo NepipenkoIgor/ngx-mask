@@ -458,22 +458,22 @@ describe('Separator: Mask', () => {
         inputElement.dispatchEvent(new Event('input'));
         fixture.detectChanges();
 
-        expect(component.form.value).equal('100000.00');
+        expect(component.form.value).equal(100000);
 
         component.thousandSeparator.set('.');
         fixture.detectChanges();
 
-        expect(component.form.value).equal('100000.00');
+        expect(component.form.value).equal(100000);
 
         component.thousandSeparator.set('-');
         fixture.detectChanges();
 
-        expect(component.form.value).equal('100000.00');
+        expect(component.form.value).equal(100000);
 
         component.thousandSeparator.set(',');
         fixture.detectChanges();
 
-        expect(component.form.value).equal('100000.00');
+        expect(component.form.value).equal(100000);
     });
 
     it('should show correct value in input after changing thousandSeparator', () => {
@@ -487,27 +487,27 @@ describe('Separator: Mask', () => {
 
         equal('123456,10', '123 456,10', fixture, false, Type);
         expect(inputTarget.value).equal('123 456,10');
-        expect(component.form.value).equal('123456.10');
+        expect(component.form.value).equal(123456.1);
 
         component.thousandSeparator.set('.');
         fixture.detectChanges();
 
         equal('123456,10', '123.456,10', fixture, false, Type);
         expect(inputTarget.value).equal('123.456,10');
-        expect(component.form.value).equal('123456.10');
+        expect(component.form.value).equal(123456.1);
 
         component.thousandSeparator.set('-');
         fixture.detectChanges();
 
         equal('123456,10', '123-456,10', fixture, false, Type);
         expect(inputTarget.value).equal('123-456,10');
-        expect(component.form.value).equal('123456.10');
+        expect(component.form.value).equal(123456.1);
 
         component.thousandSeparator.set(',');
         fixture.detectChanges();
 
         equal('123456.10', '123,456.10', fixture, false, Type);
         expect(inputTarget.value).equal('123,456.10');
-        expect(component.form.value).equal('123456.10');
+        expect(component.form.value).equal(123456.1);
     });
 });

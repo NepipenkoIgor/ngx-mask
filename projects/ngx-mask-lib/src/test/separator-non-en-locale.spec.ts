@@ -50,7 +50,7 @@ describe('Separator: Mask with FR locale', () => {
         component.decimalMarker.set('.');
 
         typeTest('12 345.67', fixture);
-        expect(component.form.value).equal('12345.67');
+        expect(component.form.value).equal(12345.67);
     });
 
     it('check formControl value to be number when decimalMarker is array', () => {
@@ -59,10 +59,10 @@ describe('Separator: Mask with FR locale', () => {
         component.decimalMarker.set(['.', ',']);
 
         typeTest('12 345,67', fixture);
-        expect(component.form.value).equal('12345.67');
+        expect(component.form.value).equal(12345.67);
 
         typeTest('123 456.78', fixture);
-        expect(component.form.value).equal('123456.78');
+        expect(component.form.value).equal(123456.78);
     });
 
     it('should show - at input', async () => {

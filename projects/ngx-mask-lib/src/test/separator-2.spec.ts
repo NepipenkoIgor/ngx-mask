@@ -76,7 +76,7 @@ describe('Separator: Mask', () => {
         equal('12,34', '12,34', fixture);
 
         await fixture.whenStable();
-        expect(component.form.value).equal('12.34');
+        expect(component.form.value).equal(12.34);
     });
 
     it('should display value in input with decimalMarker , and leadZero with separator.2', async () => {
@@ -259,7 +259,7 @@ describe('Separator: Mask', () => {
         fixture.detectChanges();
 
         equal('-1234.10', '-1 234.10', fixture);
-        expect(component.form.value).equal('-1234.10');
+        expect(component.form.value).equal(-1234.1);
     });
 
     it('should change value in formControl mask separator.3', () => {
@@ -269,7 +269,7 @@ describe('Separator: Mask', () => {
         fixture.detectChanges();
 
         equal('-1234.567', '-1 234.567', fixture);
-        expect(component.form.value).equal('-1234.567');
+        expect(component.form.value).equal(-1234.567);
     });
 
     it('should change value in formControl mask separator.1', () => {
@@ -279,7 +279,7 @@ describe('Separator: Mask', () => {
         fixture.detectChanges();
 
         equal('-1234.9', '-1 234.9', fixture);
-        expect(component.form.value).equal('-1234.9');
+        expect(component.form.value).equal(-1234.9);
     });
 
     it('should change value in formControl mask separator.0', () => {
@@ -289,7 +289,7 @@ describe('Separator: Mask', () => {
         fixture.detectChanges();
 
         equal('-1234', '-1 234', fixture);
-        expect(component.form.value).equal('-1234');
+        expect(component.form.value).equal(-1234);
     });
 
     it('should change value if user star from zero separator.0', () => {

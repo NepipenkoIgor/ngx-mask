@@ -18,7 +18,7 @@ export function nextFillableIndex(
     let maskIdx = index;
     while (
         maskIdx < maskExpression.length &&
-        specialCharacters.includes(maskExpression[maskIdx] ?? MaskExpression.EMPTY_STRING)
+        specialCharacters.includes(maskExpression[maskIdx] ?? '')
     ) {
         maskIdx += 1;
     }
@@ -58,7 +58,7 @@ export function usesCommaDecimal(
     decimalMarker: NgxMaskConfig['decimalMarker'],
     thousandSeparator: string
 ): boolean {
-    return activeDecimalMarker(value, decimalMarker, thousandSeparator) === MaskExpression.COMMA;
+    return activeDecimalMarker(value, decimalMarker, thousandSeparator) === ',';
 }
 
 /**
@@ -81,10 +81,7 @@ export function displayToPlainDecimal(
     ) {
         return value;
     }
-    return value
-        .split(thousandSeparator)
-        .join(MaskExpression.EMPTY_STRING)
-        .replace(marker, MaskExpression.DOT);
+    return value.split(thousandSeparator).join('').replace(marker, '.');
 }
 
 /**
@@ -132,10 +129,10 @@ export function retargetSeparatorValue(
     const previousMarker = activeDecimalMarker(
         number,
         previous.decimalMarker,
-        previous.thousandSeparator ?? MaskExpression.EMPTY_STRING
+        previous.thousandSeparator ?? ''
     );
     const ungrouped = previous.thousandSeparator
-        ? number.split(previous.thousandSeparator).join(MaskExpression.EMPTY_STRING)
+        ? number.split(previous.thousandSeparator).join('')
         : number;
     const retargeted = ungrouped.replace(
         previousMarker,

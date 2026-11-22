@@ -219,10 +219,7 @@ export function resolveKeepCharacterPositions(
             const typed = `${blanked.slice(0, targetAbs)}${typedSymbol}${blanked.slice(targetAbs + 1)}`;
             if (
                 targetAbs < blanked.length - suffix.length &&
-                svc._checkSymbolMask(
-                    typedSymbol,
-                    maskExpression[maskIdx] ?? MaskExpression.EMPTY_STRING
-                ) &&
+                svc._checkSymbolMask(typedSymbol, maskExpression[maskIdx] ?? '') &&
                 !outOfRange(typed, maskIdx)
             ) {
                 actualValue = typed;
@@ -266,10 +263,7 @@ export function resolveKeepCharacterPositions(
                     position = position - 1;
                 }
             } else if (
-                svc._checkSymbolMask(
-                    inputSymbol,
-                    maskExpression[maskIdx] ?? MaskExpression.EMPTY_STRING
-                ) &&
+                svc._checkSymbolMask(inputSymbol, maskExpression[maskIdx] ?? '') &&
                 !outOfRange(typed, maskIdx)
             ) {
                 actualValue = `${typed}${suffix}`;

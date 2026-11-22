@@ -173,7 +173,7 @@ export function resolveMaskAlias(
     maskExpression: string | null | undefined,
     maskAliases: Record<string, string> | undefined
 ): string {
-    const expression = maskExpression ?? MaskExpression.EMPTY_STRING;
+    const expression = maskExpression ?? '';
     if (!expression || !maskAliases) {
         return expression;
     }

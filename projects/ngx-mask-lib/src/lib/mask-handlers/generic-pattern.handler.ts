@@ -16,9 +16,9 @@ function isEmailPunctuation(inputSymbol: string, result: string): boolean {
     const last = result.slice(-1);
     return (
         allowed.includes(inputSymbol) &&
-        last !== MaskExpression.EMPTY_STRING &&
+        last !== '' &&
         last !== EMAIL_AT &&
-        !(inputSymbol === MaskExpression.DOT && last === MaskExpression.DOT)
+        !(inputSymbol === '.' && last === '.')
     );
 }
 
@@ -50,7 +50,7 @@ export const genericPatternHandler: MaskHandlerFn = function (state, params) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         let i = 0, inputSymbol: string = inputArray[0]!;
         i < inputArray.length;
-        i++, inputSymbol = inputArray[i] ?? MaskExpression.EMPTY_STRING
+        i++, inputSymbol = inputArray[i] ?? ''
     ) {
         if (cursor === maskExpression.length) {
             break;
@@ -58,10 +58,7 @@ export const genericPatternHandler: MaskHandlerFn = function (state, params) {
 
         const symbolStarInPattern: boolean = MaskExpression.SYMBOL_STAR in this.patterns;
         if (
-            this._checkSymbolMask(
-                inputSymbol,
-                maskExpression[cursor] ?? MaskExpression.EMPTY_STRING
-            ) &&
+            this._checkSymbolMask(inputSymbol, maskExpression[cursor] ?? '') &&
             maskExpression[cursor + 1] === MaskExpression.SYMBOL_QUESTION
         ) {
             result += inputSymbol;
@@ -69,19 +66,13 @@ export const genericPatternHandler: MaskHandlerFn = function (state, params) {
         } else if (
             maskExpression[cursor + 1] === MaskExpression.SYMBOL_STAR &&
             multi &&
-            this._checkSymbolMask(
-                inputSymbol,
-                maskExpression[cursor + 2] ?? MaskExpression.EMPTY_STRING
-            )
+            this._checkSymbolMask(inputSymbol, maskExpression[cursor + 2] ?? '')
         ) {
             result += inputSymbol;
             cursor += 3;
             multi = false;
         } else if (
-            this._checkSymbolMask(
-                inputSymbol,
-                maskExpression[cursor] ?? MaskExpression.EMPTY_STRING
-            ) &&
+            this._checkSymbolMask(inputSymbol, maskExpression[cursor] ?? '') &&
             maskExpression[cursor + 1] === MaskExpression.SYMBOL_STAR &&
             !symbolStarInPattern
         ) {
@@ -89,19 +80,11 @@ export const genericPatternHandler: MaskHandlerFn = function (state, params) {
             multi = true;
         } else if (
             maskExpression[cursor + 1] === MaskExpression.SYMBOL_QUESTION &&
-            this._checkSymbolMask(
-                inputSymbol,
-                maskExpression[cursor + 2] ?? MaskExpression.EMPTY_STRING
-            )
+            this._checkSymbolMask(inputSymbol, maskExpression[cursor + 2] ?? '')
         ) {
             result += inputSymbol;
             cursor += 3;
-        } else if (
-            this._checkSymbolMask(
-                inputSymbol,
-                maskExpression[cursor] ?? MaskExpression.EMPTY_STRING
-            )
-        ) {
+        } else if (this._checkSymbolMask(inputSymbol, maskExpression[cursor] ?? '')) {
             // The two-digit hour pair read ahead: `24` (or `13` with apm) is padded to `02` / `01`
             // at its first digit, as a month `13` is, so the second digit starts the minutes.
             const hourOverflow =
@@ -109,8 +92,7 @@ export const genericPatternHandler: MaskHandlerFn = function (state, params) {
                 (maskExpression[cursor] === MaskExpression.HOURS ||
                     (maskExpression[cursor] === MaskExpression.HOUR &&
                         maskExpression[cursor + 1] === MaskExpression.HOUR)) &&
-                Number(inputSymbol + (inputArray[i + 1] ?? MaskExpression.EMPTY_STRING)) >
-                    (this.apm ? 12 : 23);
+                Number(inputSymbol + (inputArray[i + 1] ?? '')) > (this.apm ? 12 : 23);
             if (
                 hourOverflow ||
                 (maskExpression[cursor] === MaskExpression.HOURS &&
@@ -178,8 +160,8 @@ export const genericPatternHandler: MaskHandlerFn = function (state, params) {
                 this.leadZeroDateTime &&
                 !this.keepCharacterPositions &&
                 !this.writingValue &&
-                inputSymbol === MaskExpression.NUMBER_ZERO &&
-                result.slice(-1) === MaskExpression.NUMBER_ZERO &&
+                inputSymbol === '0' &&
+                result.slice(-1) === '0' &&
                 i + prefixOffset >= userEdit.start &&
                 i + prefixOffset <= userEdit.end &&
                 (maskExpression[cursor - 1] === MaskExpression.DAY ||
@@ -216,7 +198,7 @@ export const genericPatternHandler: MaskHandlerFn = function (state, params) {
             // 0000M0d0), the backward-looking windows below read the previous
             // field's digits (year) as day/month digits and skip valid input.
             // Disable only those backward heuristics in that layout.
-            const tokenAbutsDigitField = maskExpression[cursor - 1] === MaskExpression.NUMBER_ZERO;
+            const tokenAbutsDigitField = maskExpression[cursor - 1] === '0';
             if (maskExpression[cursor] === MaskExpression.DAY) {
                 const maskStartWithMonth = maskExpression.slice(0, 2) === MaskExpression.MONTHS;
                 const startWithMonthInput: boolean =
@@ -282,9 +264,7 @@ export const genericPatternHandler: MaskHandlerFn = function (state, params) {
                 );
                 const yearFieldPrecedesMonth =
                     precedingField.length > 2 &&
-                    precedingField
-                        .split(MaskExpression.EMPTY_STRING)
-                        .every((token) => token === MaskExpression.NUMBER_ZERO);
+                    precedingField.split('').every((token) => token === '0');
                 // mask without day
                 const withoutDays: boolean =
                     cursor === 0 &&
@@ -375,11 +355,7 @@ export const genericPatternHandler: MaskHandlerFn = function (state, params) {
         ) {
             result += inputSymbol;
             cursor++;
-        } else if (
-            this.specialCharacters.indexOf(
-                maskExpression[cursor] ?? MaskExpression.EMPTY_STRING
-            ) !== -1
-        ) {
+        } else if (this.specialCharacters.indexOf(maskExpression[cursor] ?? '') !== -1) {
             result += maskExpression[cursor];
             cursor++;
             this._shiftStep(cursor);
@@ -387,12 +363,12 @@ export const genericPatternHandler: MaskHandlerFn = function (state, params) {
         } else if (maskExpression[cursor] === MaskExpression.NUMBER_NINE && this.showMaskTyped) {
             this._shiftStep(cursor);
         } else if (
-            this.patterns[maskExpression[cursor] ?? MaskExpression.EMPTY_STRING] &&
-            this.patterns[maskExpression[cursor] ?? MaskExpression.EMPTY_STRING]?.optional
+            this.patterns[maskExpression[cursor] ?? ''] &&
+            this.patterns[maskExpression[cursor] ?? '']?.optional
         ) {
             // If the input symbol is whitespace or doesn't match the pattern,
             // skip it without consuming the mask position
-            if (inputSymbol.trim() === MaskExpression.EMPTY_STRING) {
+            if (inputSymbol.trim() === '') {
                 // Skip whitespace input, don't advance mask cursor
                 continue;
             }
@@ -402,13 +378,13 @@ export const genericPatternHandler: MaskHandlerFn = function (state, params) {
                 maskExpression !== '000.000.000-00' &&
                 maskExpression !== '00.000.000/0000-00' &&
                 !maskExpression.match(/^9+\.0+$/) &&
-                !this.patterns[maskExpression[cursor] ?? MaskExpression.EMPTY_STRING]?.optional
+                !this.patterns[maskExpression[cursor] ?? '']?.optional
             ) {
                 result += inputArray[cursor];
             }
             if (
                 maskExpression.includes(MaskExpression.NUMBER_NINE + MaskExpression.SYMBOL_STAR) &&
-                maskExpression.includes(MaskExpression.NUMBER_ZERO + MaskExpression.SYMBOL_STAR)
+                maskExpression.includes('0' + MaskExpression.SYMBOL_STAR)
             ) {
                 cursor++;
             }
@@ -422,7 +398,7 @@ export const genericPatternHandler: MaskHandlerFn = function (state, params) {
             // of whether that literal is registered in `specialCharacters` — an
             // explicitly empty `specialCharacters` list must not make mask literals
             // unmatchable (#1512).
-            (this._findSpecialChar(this.maskExpression[cursor + 2] ?? MaskExpression.EMPTY_STRING)
+            (this._findSpecialChar(this.maskExpression[cursor + 2] ?? '')
                 ? this._findSpecialChar(inputSymbol) === this.maskExpression[cursor + 2]
                 : inputSymbol === this.maskExpression[cursor + 2]) &&
             multi
@@ -431,7 +407,7 @@ export const genericPatternHandler: MaskHandlerFn = function (state, params) {
             result += inputSymbol;
         } else if (
             this.maskExpression[cursor + 1] === MaskExpression.SYMBOL_QUESTION &&
-            (this._findSpecialChar(this.maskExpression[cursor + 2] ?? MaskExpression.EMPTY_STRING)
+            (this._findSpecialChar(this.maskExpression[cursor + 2] ?? '')
                 ? this._findSpecialChar(inputSymbol) === this.maskExpression[cursor + 2]
                 : inputSymbol === this.maskExpression[cursor + 2]) &&
             multi

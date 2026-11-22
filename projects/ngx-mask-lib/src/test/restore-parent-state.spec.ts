@@ -1,11 +1,4 @@
-import {
-    ChangeDetectionStrategy,
-    Component,
-    forwardRef,
-    input,
-    signal,
-    ViewChild,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, forwardRef, signal, ViewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import type { ControlValueAccessor } from '@angular/forms';
 import {
@@ -18,6 +11,7 @@ import {
 } from '@angular/forms';
 import { NgxMaskDirective, provideNgxMask } from 'ngx-mask';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { ForwardingMaskInputComponent } from './utils/forwarding-mask-input.component';
 
 @Component({
     selector: 'ngxd-restore-parent-state',
@@ -299,39 +293,6 @@ describe('Directive: programmatic write to a control that updates on blur or sub
         }
     );
 });
-
-/** A custom control that hands its whole ControlValueAccessor contract to the inner mask. */
-@Component({
-    selector: 'ngxd-forwarding-mask-input',
-    imports: [NgxMaskDirective],
-    changeDetection: ChangeDetectionStrategy.Eager,
-    providers: [
-        {
-            provide: NG_VALUE_ACCESSOR,
-            multi: true,
-            useExisting: forwardRef(() => ForwardingMaskInputComponent),
-        },
-    ],
-    template: `<input [mask]="mask()" [leadZero]="leadZero()" />`,
-})
-class ForwardingMaskInputComponent implements ControlValueAccessor {
-    public readonly mask = input.required<string>();
-    public readonly leadZero = input(false);
-    @ViewChild(NgxMaskDirective, { static: true })
-    private readonly _maskDirective!: NgxMaskDirective;
-
-    public writeValue(value: unknown): void {
-        this._maskDirective.writeValue(value);
-    }
-
-    public registerOnChange(fn: (value: unknown) => void): void {
-        this._maskDirective.registerOnChange(fn);
-    }
-
-    public registerOnTouched(fn: () => void): void {
-        this._maskDirective.registerOnTouched(fn);
-    }
-}
 
 /** A custom control that hands the mask a callback of its own: it transforms the value and reacts to it. */
 @Component({

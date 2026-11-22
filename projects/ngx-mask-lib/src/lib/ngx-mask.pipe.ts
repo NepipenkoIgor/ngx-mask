@@ -109,11 +109,8 @@ export class NgxMaskPipe implements PipeTransform {
                 );
             }
 
-            if (this._maskService.decimalMarker === MaskExpression.COMMA) {
-                processedValue = (processedValue as string).replace(
-                    MaskExpression.DOT,
-                    MaskExpression.COMMA
-                );
+            if (this._maskService.decimalMarker === ',') {
+                processedValue = (processedValue as string).replace('.', ',');
             }
         }
 
@@ -135,8 +132,7 @@ export class NgxMaskPipe implements PipeTransform {
                     return test;
                 } else {
                     this.mask =
-                        this._maskExpressionArray[this._maskExpressionArray.length - 1] ??
-                        MaskExpression.EMPTY_STRING;
+                        this._maskExpressionArray[this._maskExpressionArray.length - 1] ?? '';
                 }
             });
         }

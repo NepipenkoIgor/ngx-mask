@@ -33,14 +33,13 @@ export function findDateTimeFieldAt(
     ];
     let index = 0;
     while (index < maskExpression.length) {
-        const token = maskExpression[index] ?? MaskExpression.EMPTY_STRING;
+        const token = maskExpression[index] ?? '';
         if (dateTimeTokens.includes(token)) {
             const next = maskExpression[index + 1];
             const isCombinedHour =
                 (token === MaskExpression.HOURS || token === MaskExpression.HOUR) &&
                 next === MaskExpression.HOUR;
-            const end =
-                next === MaskExpression.NUMBER_ZERO || isCombinedHour ? index + 2 : index + 1;
+            const end = next === '0' || isCombinedHour ? index + 2 : index + 1;
             if (position >= index && position <= end) {
                 return {
                     token: token as DateTimeField['token'],
