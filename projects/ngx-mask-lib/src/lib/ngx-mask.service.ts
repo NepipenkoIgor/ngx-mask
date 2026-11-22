@@ -235,7 +235,7 @@ export class NgxMaskService extends NgxMaskApplierService {
 
         // Handle just pasted input
         if (justPasted) {
-            newInputValue = inputValue;
+            newInputValue = this._pastedIntoHiddenValue(inputValue) ?? inputValue;
         }
 
         // Handle backspace with special characters
@@ -391,7 +391,7 @@ export class NgxMaskService extends NgxMaskApplierService {
         // Handle hidden input and showMaskTyped
         if (!this.showMaskTyped || (this.showMaskTyped && this.hiddenInput)) {
             if (this.hiddenInput) {
-                return `${this.hideInput(result, this.maskExpression)}${this.maskIsShown.slice(result.length)}`;
+                return this.hiddenDisplay(result);
             }
             return result;
         }
@@ -461,6 +461,33 @@ export class NgxMaskService extends NgxMaskApplierService {
             return;
         }
         this.clearIfNotMatchFn();
+    }
+
+    /**
+     * A hiddenInput display only holds the hidden characters, so a paste into it is spliced into the
+     * real value (`actualValue`, aligned 1:1 with the display) at the selection that was replaced.
+     * Returns null when there is nothing to splice into or the display does not fit that edit.
+     */
+    private _pastedIntoHiddenValue(display: string): string | null {
+        if (
+            !this.hiddenInput ||
+            !this.actualValue ||
+            typeof this.selStart !== 'number' ||
+            typeof this.selEnd !== 'number'
+        ) {
+            return null;
+        }
+        const before = this.hiddenDisplay(this.actualValue);
+        const insertedLength = display.length - (before.length - (this.selEnd - this.selStart));
+        const end = this.selStart + insertedLength;
+        return insertedLength > 0 && display.slice(end) === before.slice(this.selEnd)
+            ? `${this.actualValue.slice(0, this.selStart)}${display.slice(this.selStart, end)}${this.actualValue.slice(this.selEnd)}`
+            : null;
+    }
+
+    /** The hiddenInput display of `value`: its hidden characters plus the rest of the shown mask. */
+    public hiddenDisplay(value: string): string {
+        return `${this.hideInput(value, this.maskExpression)}${this.maskIsShown.slice(value.length)}`;
     }
 
     public hideInput(inputValue: string, maskExpression: string): string {
