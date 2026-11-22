@@ -264,6 +264,50 @@ export function overwriteDateSlot(
     return { value, position: caret, end: caret };
 }
 
+/**
+ * A run of characters inserted at once (`insertText`, no keydown) into a full-length date lands as
+ * the same characters typed one by one: each overwrites the next digit slot, repaired or rejected
+ * like a typed one. `position` is the caret after the run in `elValue`. Null when the edit is not
+ * that run over `before`, or when one of its characters is left to the caller.
+ */
+export function overwriteDateRun(
+    svc: DateSlotMask,
+    before: string,
+    elValue: string,
+    position: number,
+    run: string
+): DateOverwrite | null {
+    let from = position - run.length;
+    let to = before.length - elValue.length + position;
+    if (elValue !== before.slice(0, from) + run + before.slice(to)) {
+        return null;
+    }
+    let display = before;
+    let result: DateOverwrite | null = null;
+    for (const char of run) {
+        const typed = display.slice(0, from) + char + display.slice(to);
+        result = overwriteDateSlot(svc, display, typed, from + 1);
+        if (!result) {
+            return null;
+        }
+        display = result.value;
+        from = to = result.position;
+    }
+    return result;
+}
+
+/** Whether `digits` laid over the slots of the mask put a date or time field out of range. */
+export function isPasteOutOfRange(
+    svc: Pick<DateSlotMask, 'maskExpression' | 'apm' | 'specialCharacters'>,
+    digits: string
+): boolean {
+    let next = 0;
+    const display = [...svc.maskExpression]
+        .map((char) => (svc.specialCharacters.includes(char) ? char : (digits[next++] ?? '_')))
+        .join('');
+    return [...display].some((_, slot) => isFieldOutOfRange(svc, display, slot));
+}
+
 /** The span of `value` that the user's last edit (keystroke, deletion, paste) changed. */
 export type UserEdit = { value: string; start: number; end: number };
 

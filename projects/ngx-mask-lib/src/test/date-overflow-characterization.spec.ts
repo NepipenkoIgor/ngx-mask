@@ -1358,7 +1358,8 @@ describe('date overflow characterization', () => {
             ]
         );
 
-        // keepCharacterPositions never guards 00 (Item 15), pasted or typed
+        // keepCharacterPositions rejects a pasted day or month out of range (#1748); a typed 00 is
+        // not guarded here (Item 15)
         section(
             'd0/M0/0000 keepCharacterPositions',
             {
@@ -1367,14 +1368,8 @@ describe('date overflow characterization', () => {
                 keepCharacterPositions: true,
             },
             [
-                {
-                    paste: '00062020',
-                    expected: { value: '00/06/2020', caret: 10, model: '00062020' },
-                },
-                {
-                    paste: '15002020',
-                    expected: { value: '15/00/2020', caret: 10, model: '15002020' },
-                },
+                { paste: '00062020', expected: { value: '', caret: 0, model: null } },
+                { paste: '15002020', expected: { value: '', caret: 0, model: null } },
                 { keys: '00', expected: { value: '00', caret: 2, model: '00' } },
                 { keys: '0006', expected: { value: '00/06', caret: 5, model: '0006' } },
             ]
@@ -1389,10 +1384,7 @@ describe('date overflow characterization', () => {
                 showMaskTyped: true,
             },
             [
-                {
-                    paste: '00062020',
-                    expected: { value: '00/06/2020', caret: 10, model: '00062020' },
-                },
+                { paste: '00062020', expected: { value: '__/__/____', caret: 0, model: '' } },
                 // #1724: a second 0 would make the day 00, so the key is rejected
                 { keys: '00', expected: { value: '0_/__/____', caret: 1, model: '0' } },
                 // the caret stays at the end of the skeleton, as after focusing the empty field

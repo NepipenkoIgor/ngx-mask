@@ -31,7 +31,9 @@ import type { NgxMaskConfig } from './ngx-mask.config';
 import { NGX_MASK_CONFIG, resolveMaskAlias, timeMasks, withoutValidation } from './ngx-mask.config';
 import {
     isDateTimeMask,
+    isPasteOutOfRange,
     leadZeroDateTimeCaret,
+    overwriteDateRun,
     overwriteDateSlot,
     overwriteFullDateValue,
     setUserEdit,
@@ -968,6 +970,21 @@ export class NgxMaskDirective
                         ? this._maskService.removeMask(el.value.slice(0, caret))
                         : null;
 
+                // A paste that puts a date or time field out of range is rejected, as a typed
+                // digit is (#1748): the display stays as it was.
+                if (
+                    this._justPasted &&
+                    this._maskService.keepCharacterPositions &&
+                    isPasteOutOfRange(this._maskService, this._maskService.removeMask(el.value))
+                ) {
+                    const svc = this._maskService;
+                    el.value = svc.actualValue || `${svc.prefix}${svc.maskIsShown}${svc.suffix}`;
+                    this._inputValue = el.value;
+                    this._justPasted = false;
+                    el.setSelectionRange(Number(svc.selStart), Number(svc.selStart));
+                    return;
+                }
+
                 if (
                     this._maskService.keepCharacterPositions &&
                     this._maskService.placeHolderCharacter.length === 1 &&
@@ -1022,10 +1039,20 @@ export class NgxMaskDirective
                     this._maskService.suffix ||
                     this._maskService.keepCharacterPositions ||
                     this._maskService.hiddenInput;
+                // Several characters inserted at once are typed one by one (#1747).
+                const run = this._isBulkInsertion(e) ? (e as InputEvent).data : null;
                 const overwrite =
                     keepsFullDateOverwrite || isDeletion
                         ? null
-                        : overwriteDateSlot(this._maskService, preEditValue, el.value, position);
+                        : run
+                          ? overwriteDateRun(
+                                this._maskService,
+                                preEditValue,
+                                el.value,
+                                position,
+                                run
+                            )
+                          : overwriteDateSlot(this._maskService, preEditValue, el.value, position);
                 if (overwrite) {
                     el.value = overwrite.value;
                     this._inputValue = overwrite.value;
