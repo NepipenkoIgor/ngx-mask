@@ -1,5 +1,15 @@
 # Changelog
 
+## [22.3.1](https://github.com/NepipenkoIgor/ngx-mask/compare/v22.3.0...v22.3.1) (2026-11-22)
+
+
+### Fix
+
+* **mask:** echo normalised initial outputTransformFn value in all forms ([#1760](https://github.com/NepipenkoIgor/ngx-mask/issues/1760)) ([4101443](https://github.com/NepipenkoIgor/ngx-mask/commit/4101443ca8b3a962f0dd681ab4f6b09afb99cf9e))
+* **mask:** keep caret, suffix and hidden value on input edits ([#1761](https://github.com/NepipenkoIgor/ngx-mask/issues/1761)) ([6e0dcd4](https://github.com/NepipenkoIgor/ngx-mask/commit/6e0dcd43654433a5a30b358176f33ddbcd26c2e9))
+* **mask:** keep digits of written values with mixed separator markers ([#1755](https://github.com/NepipenkoIgor/ngx-mask/issues/1755)) ([0e5ef83](https://github.com/NepipenkoIgor/ngx-mask/commit/0e5ef83379fb54a9925f6ef8f8106d0dc709d031)), closes [#1745](https://github.com/NepipenkoIgor/ngx-mask/issues/1745)
+* **mask:** type bulk date inserts and reject out-of-range kcp pastes ([#1757](https://github.com/NepipenkoIgor/ngx-mask/issues/1757)) ([cfcc562](https://github.com/NepipenkoIgor/ngx-mask/commit/cfcc5626139c077e80ffdb035da72a72152448e9)), closes [#1747](https://github.com/NepipenkoIgor/ngx-mask/issues/1747) [#1748](https://github.com/NepipenkoIgor/ngx-mask/issues/1748) [#1763](https://github.com/NepipenkoIgor/ngx-mask/issues/1763)
+
 ## [22.3.0](https://github.com/NepipenkoIgor/ngx-mask/compare/v22.2.5...v22.3.0) (2026-11-22)
 
 
