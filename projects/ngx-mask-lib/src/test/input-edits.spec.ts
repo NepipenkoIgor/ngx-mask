@@ -112,10 +112,23 @@ describe('Directive: Mask (input edits)', () => {
         }, '12');
         const el = input();
         expect(el.value).toBe('1 2__$');
-        el.setSelectionRange(5, 5);
+        el.setSelectionRange(3, 3);
         edit('9', 'insertText');
 
-        expect(el.value.endsWith('$')).toBe(true);
+        expect(el.value).toBe('1 29_$');
+    });
+
+    it('keeps a plain suffix after a keyless insert without showMaskTyped', async () => {
+        await setup((c) => {
+            c.mask.set('0 000');
+            c.suffix.set('$');
+        }, '1234');
+        const el = input();
+        expect(el.value).toBe('1 234$');
+        el.setSelectionRange(6, 6);
+        edit('9', 'insertText');
+
+        expect(el.value).toBe('1 234$');
     });
 
     it('#1750 replaces the selection of a hiddenInput on a keyless edit', () => {
