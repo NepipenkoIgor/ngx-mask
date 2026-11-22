@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
 import { OptDocs, OptExamples } from 'src/assets/content/optional';
 import { lists } from 'src/assets/content/lists';
 import { SepDocs, SepExamples } from 'src/assets/content/separators';
@@ -19,6 +20,7 @@ import {
     ParserAndFormatterDocs,
 } from '../assets/content/parser-and-formatter';
 import { VersionToken } from '@shared/version/version.token';
+import { DEFAULT_GROUP_ID, parseFragment } from '@shared/fragment/section-fragment';
 
 declare const VERSION: string;
 
@@ -46,7 +48,12 @@ const DEFAULT_CARD_CONTENT: CardContent = { docs: ComDocs, examples: ComExamples
     providers: [{ provide: VersionToken, useValue: VERSION }],
 })
 export class AppComponent {
-    private readonly selectedCardId = signal<number>(1);
+    private readonly document = inject(DOCUMENT);
+
+    /** A deep link `#G-N` opens its own group on the first render. */
+    protected readonly selectedCardId = signal<number>(
+        this.groupOf(parseFragment(this.document.location?.hash))
+    );
 
     private readonly selectedCardContent = computed<CardContent>(
         () => CARD_CONTENT[this.selectedCardId()] ?? DEFAULT_CARD_CONTENT
@@ -60,6 +67,10 @@ export class AppComponent {
     protected readonly lists: ListItem[] = lists;
     protected readonly title = 'Ngx-Mask';
     protected readonly subtitle = 'Angular plugin to make masks on form fields and html elements';
+
+    private groupOf(target: ReturnType<typeof parseFragment>): number {
+        return target && target.group in CARD_CONTENT ? target.group : DEFAULT_GROUP_ID;
+    }
 
     protected switchCard(cardId: number): void {
         this.selectedCardId.set(cardId);

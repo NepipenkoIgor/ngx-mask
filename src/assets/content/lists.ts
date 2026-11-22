@@ -79,6 +79,16 @@ export const lists: ListItem[] = [
                 id: 14,
                 scrollTo: 'mask-aliases',
             },
+            {
+                content: 'Smart cursor with leadZeroDateTime',
+                id: 15,
+                scrollTo: 'lead-zero-date-time',
+            },
+            {
+                content: 'Date with leadZeroDateTime',
+                id: 16,
+                scrollTo: 'date-lead-zero-date-time',
+            },
         ],
     },
     {
@@ -248,6 +258,11 @@ export const lists: ListItem[] = [
                 content: 'Percent with multiple decimal markers',
                 id: 7,
                 scrollTo: 'percentMultipleDecimalMarkers',
+            },
+            {
+                content: 'Secure date',
+                id: 6,
+                scrollTo: 'secure-date',
             },
         ],
     },
