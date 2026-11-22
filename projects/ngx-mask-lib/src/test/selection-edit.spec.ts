@@ -121,4 +121,22 @@ describe('Directive: Mask (selection editing)', () => {
             expect(component.form.value === '' || component.form.value === null).toBe(true);
         });
     });
+
+    describe('one-character prefix, edit with the caret at 1 (#1719)', () => {
+        it('should type the next digit into the slot a delete freed after the prefix', () => {
+            component.mask.set('0000');
+            component.prefix.set('$');
+            fixture.detectChanges();
+            typeTest('1234', fixture);
+            expect(inputTarget.value).toBe('$1234');
+
+            editSelection(1, 2, null);
+            expect(inputTarget.value).toBe('$234');
+            // The next key lands where the delete left the caret, not where the test puts it.
+            const caret = inputTarget.selectionStart as number;
+            editSelection(caret, caret, '5');
+
+            expect(inputTarget.value).toBe('$5234');
+        });
+    });
 });

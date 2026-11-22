@@ -774,7 +774,7 @@ describe('keepCharacterPositions characterization', () => {
                 config: withPrefix,
                 initial: '123456',
                 action: { start: 4, end: 4, key: 'Backspace' },
-                expected: { value: '+7 _23-456', caret: 2, model: '23456' },
+                expected: { value: '+7 _23-456', caret: 3, model: '23456' },
             },
             {
                 name: 'Backspace inside the prefix is prevented',
@@ -1150,7 +1150,15 @@ describe('keepCharacterPositions characterization', () => {
                 config: withBoth,
                 initial: '123',
                 action: { start: 1, end: 3, key: 'Backspace' },
-                expected: { value: '$__3 USD', caret: 2, model: '3' },
+                expected: { value: '$__3 USD', caret: 1, model: '3' },
+            },
+            {
+                name: 'a digit typed after a selection delete at the prefix fills the first blank (#1710)',
+                config: withBoth,
+                initial: '123',
+                action: { start: 1, end: 2, key: 'Backspace' },
+                then: '5',
+                expected: { value: '$523 USD', caret: 2, model: '523' },
             },
             {
                 name: 'typing over a digit',
