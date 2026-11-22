@@ -1,4 +1,3 @@
-import { MaskExpression } from '../ngx-mask-expression.enum';
 import type { MaskHandlerFn } from './mask-handler.types';
 
 /** PERCENT handler (moved verbatim from applyMask). startsWith(PERCENT); terminal —
@@ -25,7 +24,7 @@ export const percentHandler: MaskHandlerFn = function (state, params) {
         let base: string = processedValue.substring(0, processedValue.indexOf(decimalMarker) - 1);
         if (
             this.allowNegativeNumbers &&
-            processedValue.slice(cursor, cursor + 1) === MaskExpression.MINUS &&
+            processedValue.slice(cursor, cursor + 1) === '-' &&
             !backspaced
         ) {
             base = processedValue.substring(0, processedValue.indexOf(decimalMarker));
@@ -38,8 +37,8 @@ export const percentHandler: MaskHandlerFn = function (state, params) {
     }
     let value: string;
     // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-    this.allowNegativeNumbers && processedValue.slice(cursor, cursor + 1) === MaskExpression.MINUS
-        ? (value = `${MaskExpression.MINUS}${processedValue.slice(cursor + 1, cursor + processedValue.length)}`)
+    this.allowNegativeNumbers && processedValue.slice(cursor, cursor + 1) === '-'
+        ? (value = `${'-'}${processedValue.slice(cursor + 1, cursor + processedValue.length)}`)
         : (value = processedValue);
     if (this.percentage(value)) {
         state.result = this._splitPercentZero(processedValue);

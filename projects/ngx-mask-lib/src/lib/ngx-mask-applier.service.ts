@@ -115,7 +115,7 @@ export class NgxMaskApplierService {
         cb: (actualShift: number, backspaceShift: boolean) => void = () => {}
     ): string {
         if (!maskExpression || typeof inputValue !== 'string') {
-            return MaskExpression.EMPTY_STRING;
+            return '';
         }
         let cursor = 0;
         let result = '';
@@ -147,11 +147,8 @@ export class NgxMaskApplierService {
         if (processedValue === '(' && this.prefix) {
             processedValue = '';
         }
-        const inputArray: string[] = processedValue.toString().split(MaskExpression.EMPTY_STRING);
-        if (
-            this.allowNegativeNumbers &&
-            processedValue.slice(cursor, cursor + 1) === MaskExpression.MINUS
-        ) {
+        const inputArray: string[] = processedValue.toString().split('');
+        if (this.allowNegativeNumbers && processedValue.slice(cursor, cursor + 1) === '-') {
             result += processedValue.slice(cursor, cursor + 1);
         }
         const arr = digitsOf(processedValue);
@@ -196,9 +193,7 @@ export class NgxMaskApplierService {
         if (
             result[processedPosition - 1] &&
             result.length + 1 === maskExpression.length &&
-            this.specialCharacters.indexOf(
-                maskExpression[maskExpression.length - 1] ?? MaskExpression.EMPTY_STRING
-            ) !== -1
+            this.specialCharacters.indexOf(maskExpression[maskExpression.length - 1] ?? '') !== -1
         ) {
             result += maskExpression[maskExpression.length - 1];
         }
@@ -228,7 +223,7 @@ export class NgxMaskApplierService {
             onlySpecial = inputArray.every((char) => this.specialCharacters.includes(char));
         }
 
-        let res = `${this.prefix}${onlySpecial ? MaskExpression.EMPTY_STRING : result}${
+        let res = `${this.prefix}${onlySpecial ? '' : result}${
             this.showMaskTyped ? '' : this.suffix
         }`;
 
@@ -248,23 +243,16 @@ export class NgxMaskApplierService {
             // index 1 — otherwise a valid digit is rejected and the leading literals
             // are never auto-filled (#1498).
             const firstPatternIndex = nextFillableIndex(maskExpression, this.specialCharacters, 1);
-            if (
-                !this._checkSymbolMask(
-                    processedValue,
-                    maskExpression[firstPatternIndex] ?? MaskExpression.EMPTY_STRING
-                )
-            ) {
+            if (!this._checkSymbolMask(processedValue, maskExpression[firstPatternIndex] ?? '')) {
                 return '';
             }
         }
 
-        if (result.includes(MaskExpression.MINUS) && this.prefix && this.allowNegativeNumbers) {
-            if (backspaced && result === MaskExpression.MINUS) {
+        if (result.includes('-') && this.prefix && this.allowNegativeNumbers) {
+            if (backspaced && result === '-') {
                 return '';
             }
-            res = `${MaskExpression.MINUS}${this.prefix}${result
-                .split(MaskExpression.MINUS)
-                .join(MaskExpression.EMPTY_STRING)}${this.suffix}`;
+            res = `${'-'}${this.prefix}${result.split('-').join('')}${this.suffix}`;
         }
         return res;
     }
@@ -307,20 +295,16 @@ export class NgxMaskApplierService {
         if (Array.isArray(decimalChars)) {
             const regExp = new RegExp(decimalChars.map((v) => escapeRegExp(v)).join('|'));
             x = str.split(regExp);
-            decimalChar = str.match(regExp)?.[0] ?? MaskExpression.EMPTY_STRING;
+            decimalChar = str.match(regExp)?.[0] ?? '';
         } else {
             x = str.split(decimalChars);
             decimalChar = decimalChars;
         }
-        const decimals: string =
-            x.length > 1 ? `${decimalChar}${x[1]}` : MaskExpression.EMPTY_STRING;
-        let res: string = x[0] ?? MaskExpression.EMPTY_STRING;
-        const separatorLimit: string = this.separatorLimit.replace(
-            /\s/g,
-            MaskExpression.EMPTY_STRING
-        );
+        const decimals: string = x.length > 1 ? `${decimalChar}${x[1]}` : '';
+        let res: string = x[0] ?? '';
+        const separatorLimit: string = this.separatorLimit.replace(/\s/g, '');
         if (separatorLimit && +separatorLimit) {
-            if (res[0] === MaskExpression.MINUS) {
+            if (res[0] === '-') {
                 res = `-${res.slice(1, res.length).slice(0, separatorLimit.length)}`;
             } else {
                 res = res.slice(0, separatorLimit.length);
@@ -344,27 +328,24 @@ export class NgxMaskApplierService {
      * decimal marker".
      */
     protected _formatFromDecimals(value: string, precision: number, decimalMarker: string): string {
-        const negative = this.allowNegativeNumbers && value.startsWith(MaskExpression.MINUS);
-        let digits = value.replace(/\D+/g, MaskExpression.EMPTY_STRING).replace(/^0+/, '');
+        const negative = this.allowNegativeNumbers && value.startsWith('-');
+        let digits = value.replace(/\D+/g, '').replace(/^0+/, '');
         if (!digits) {
-            return negative ? MaskExpression.MINUS : MaskExpression.EMPTY_STRING;
+            return negative ? '-' : '';
         }
-        const separatorLimit: string = this.separatorLimit.replace(
-            /\s/g,
-            MaskExpression.EMPTY_STRING
-        );
+        const separatorLimit: string = this.separatorLimit.replace(/\s/g, '');
         if (separatorLimit && +separatorLimit) {
             // Dropping the overflow from the right rejects the most recently typed
             // digits once the integer part has reached the configured limit.
             digits = digits.slice(0, separatorLimit.length + precision);
         }
-        digits = digits.padStart(precision + 1, MaskExpression.NUMBER_ZERO);
+        digits = digits.padStart(precision + 1, '0');
         const integerPart = this._applyThousandGrouping(
             digits.slice(0, digits.length - precision),
             this.thousandSeparator
         );
         const decimalPart = digits.slice(digits.length - precision);
-        return `${negative ? MaskExpression.MINUS : MaskExpression.EMPTY_STRING}${integerPart}${decimalMarker}${decimalPart}`;
+        return `${negative ? '-' : ''}${integerPart}${decimalMarker}${decimalPart}`;
     }
 
     /** Inserts `separator` between every 3-digit group of an integer-digit string. */
@@ -385,7 +366,7 @@ export class NgxMaskApplierService {
     protected percentage = (str: string): boolean => {
         const sanitizedStr = str.replace(',', '.');
         const value = Number(
-            this.allowNegativeNumbers && str.includes(MaskExpression.MINUS)
+            this.allowNegativeNumbers && str.includes('-')
                 ? sanitizedStr.slice(1, str.length)
                 : sanitizedStr
         );
@@ -394,7 +375,7 @@ export class NgxMaskApplierService {
     };
 
     public getPrecision = (maskExpression: string): number => {
-        const x: string[] = maskExpression.split(MaskExpression.DOT);
+        const x: string[] = maskExpression.split('.');
         if (x.length > 1) {
             return Number(x[x.length - 1]);
         }
@@ -465,10 +446,10 @@ export class NgxMaskApplierService {
 
     protected _stripToDecimal(str: string): string {
         const isDecimalMarkerChar = (char: string): char is DecimalMarkerChar =>
-            char === MaskExpression.DOT || char === MaskExpression.COMMA;
+            char === '.' || char === ',';
 
         return str
-            .split(MaskExpression.EMPTY_STRING)
+            .split('')
             .filter((i: string, idx: number) => {
                 const isDecimalMarker =
                     typeof this.decimalMarker === 'string'
@@ -478,10 +459,10 @@ export class NgxMaskApplierService {
                     i.match('^-?\\d') ||
                     i === this.thousandSeparator ||
                     isDecimalMarker ||
-                    (i === MaskExpression.MINUS && idx === 0 && this.allowNegativeNumbers)
+                    (i === '-' && idx === 0 && this.allowNegativeNumbers)
                 );
             })
-            .join(MaskExpression.EMPTY_STRING);
+            .join('');
     }
 
     protected _charToRegExpExpression(char: string): string {
@@ -506,9 +487,9 @@ export class NgxMaskApplierService {
             valuesIP.length === 4 &&
             !valuesIP.some((value: string, index: number) => {
                 if (valuesIP.length !== index + 1) {
-                    return value === MaskExpression.EMPTY_STRING || Number(value) > 255;
+                    return value === '' || Number(value) > 255;
                 }
-                return value === MaskExpression.EMPTY_STRING || Number(value.substring(0, 3)) > 255;
+                return value === '' || Number(value.substring(0, 3)) > 255;
             })
         );
     }
@@ -523,25 +504,22 @@ export class NgxMaskApplierService {
     }
 
     protected _splitPercentZero(value: string): string {
-        if (value === MaskExpression.MINUS && this.allowNegativeNumbers) {
+        if (value === '-' && this.allowNegativeNumbers) {
             return value;
         }
         const decimal = this._activeDecimalMarker(value);
         const decimalIndex = value.indexOf(decimal);
-        const emptyOrMinus =
-            this.allowNegativeNumbers && value.includes(MaskExpression.MINUS) ? '-' : '';
+        const emptyOrMinus = this.allowNegativeNumbers && value.includes('-') ? '-' : '';
         if (decimalIndex === -1) {
             const parsedValue = parseInt(emptyOrMinus ? value.slice(1, value.length) : value, 10);
-            return isNaN(parsedValue)
-                ? MaskExpression.EMPTY_STRING
-                : `${emptyOrMinus}${parsedValue}`;
+            return isNaN(parsedValue) ? '' : `${emptyOrMinus}${parsedValue}`;
         } else {
             const integerPart = parseInt(value.replace('-', '').substring(0, decimalIndex), 10);
             const decimalPart = value.substring(decimalIndex + 1);
             const integerString = isNaN(integerPart) ? '' : integerPart.toString();
 
-            return integerString === MaskExpression.EMPTY_STRING
-                ? MaskExpression.EMPTY_STRING
+            return integerString === ''
+                ? ''
                 : `${emptyOrMinus}${integerString}${decimal}${decimalPart}`;
         }
     }

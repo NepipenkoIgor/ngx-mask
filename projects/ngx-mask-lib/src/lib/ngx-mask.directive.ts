@@ -417,9 +417,7 @@ export class NgxMaskDirective
                 this._maskService.decimalMarker = this._boundConfig.decimalMarker;
                 if (thousandSeparator.currentValue === this._maskService.decimalMarker) {
                     this._maskService.decimalMarker =
-                        thousandSeparator.currentValue === MaskExpression.COMMA
-                            ? MaskExpression.DOT
-                            : MaskExpression.COMMA;
+                        thousandSeparator.currentValue === ',' ? '.' : ',';
                 }
                 this._maskService.writingValue = true;
             }
@@ -572,7 +570,7 @@ export class NgxMaskDirective
     private _keepMinusOutOfSpecialCharacters(): void {
         if (this._maskService.allowNegativeNumbers) {
             this._maskService.specialCharacters = this._maskService.specialCharacters.filter(
-                (c: string) => c !== MaskExpression.MINUS
+                (c: string) => c !== '-'
             );
         }
     }
@@ -652,9 +650,9 @@ export class NgxMaskDirective
                 if (this._maskService.patterns[key]?.optional) {
                     if (maskValue.indexOf(key) !== maskValue.lastIndexOf(key)) {
                         const opt: string = maskValue
-                            .split(MaskExpression.EMPTY_STRING)
+                            .split('')
                             .filter((i: string) => i === key)
-                            .join(MaskExpression.EMPTY_STRING);
+                            .join('');
                         counterOfOpt += opt.length;
                     } else if (maskValue.indexOf(key) !== -1) {
                         counterOfOpt++;
@@ -667,7 +665,7 @@ export class NgxMaskDirective
                         // indexOf === 0) it used to mark EVERY value as valid.
                         const hasMandatoryAfterOptional = maskValue
                             .slice(firstOptionalIndex)
-                            .split(MaskExpression.EMPTY_STRING)
+                            .split('')
                             .some(
                                 (symbol: string) =>
                                     !!this._maskService.patterns[symbol] &&
@@ -781,15 +779,8 @@ export class NgxMaskDirective
 
     public onModelChange(value: unknown): void {
         // on form reset we need to update the actualValue
-        if (
-            (value === MaskExpression.EMPTY_STRING ||
-                value === null ||
-                typeof value === 'undefined') &&
-            this._maskService.actualValue
-        ) {
-            this._maskService.actualValue = this._maskService.getActualValue(
-                MaskExpression.EMPTY_STRING
-            );
+        if ((value ?? '') === '' && this._maskService.actualValue) {
+            this._maskService.actualValue = this._maskService.getActualValue('');
         }
     }
 
@@ -1013,7 +1004,7 @@ export class NgxMaskDirective
                         this._maskService.thousandSeparator
                     )
                 ) {
-                    this._maskService.actualValue = MaskExpression.EMPTY_STRING;
+                    this._maskService.actualValue = '';
                 }
 
                 let caretShift = 0;
@@ -1054,9 +1045,7 @@ export class NgxMaskDirective
                     // The edit touches the characters next to the caret; a paste touches them all.
                     // A deletion that starts on a separator changes no field next to the caret, so
                     // it leaves nothing to clamp.
-                    const removedChar = isDeletion
-                        ? (preEditValue[caret] ?? MaskExpression.EMPTY_STRING)
-                        : MaskExpression.EMPTY_STRING;
+                    const removedChar = isDeletion ? (preEditValue[caret] ?? '') : '';
                     setUserEdit(
                         this._maskService,
                         this._maskService.specialCharacters.includes(removedChar)
@@ -1149,9 +1138,7 @@ export class NgxMaskDirective
                     const isBareDecimalMarker =
                         valueWithoutPrefix.length === 1 &&
                         (Array.isArray(decimalMarker)
-                            ? decimalMarker.includes(
-                                  valueWithoutPrefix as MaskExpression.DOT | MaskExpression.COMMA
-                              )
+                            ? decimalMarker.includes(valueWithoutPrefix as '.' | ',')
                             : valueWithoutPrefix === decimalMarker);
                     positionToApply = isBareDecimalMarker
                         ? this._getActualInputLength() + 1
@@ -1271,13 +1258,8 @@ export class NgxMaskDirective
                 const decimalPart = unsuffixedValue.split(decimalMarker)[1] as string;
 
                 const paddedValue = unsuffixedValue.includes(decimalMarker)
-                    ? unsuffixedValue +
-                      MaskExpression.NUMBER_ZERO.repeat(precision - (decimalPart?.length || 0)) +
-                      suffix
-                    : unsuffixedValue +
-                      decimalMarker +
-                      MaskExpression.NUMBER_ZERO.repeat(precision) +
-                      suffix;
+                    ? unsuffixedValue + '0'.repeat(precision - (decimalPart?.length || 0)) + suffix
+                    : unsuffixedValue + decimalMarker + '0'.repeat(precision) + suffix;
                 // Only a blur that really pads the text is an edit: re-emitting the same
                 // text would dirty the control and fire a duplicate valueChanges for a plain
                 // focus + blur of a prefilled field.
@@ -1453,8 +1435,7 @@ export class NgxMaskDirective
                             while (
                                 specialCharacters.includes(
                                     (
-                                        this._inputValue[(el.selectionStart as number) - 1] ??
-                                        MaskExpression.EMPTY_STRING
+                                        this._inputValue[(el.selectionStart as number) - 1] ?? ''
                                     ).toString()
                                 ) &&
                                 ((prefixLength >= 1 &&
@@ -1544,12 +1525,12 @@ export class NgxMaskDirective
                     // The default action (and its input event) is suppressed, so the
                     // inputTransformFn would never see the cleared value; run it here (#1651).
                     const transformedEmpty = this._maskService.inputTransformFn
-                        ? this._maskService.inputTransformFn(MaskExpression.EMPTY_STRING)
-                        : MaskExpression.EMPTY_STRING;
+                        ? this._maskService.inputTransformFn('')
+                        : '';
                     const clearedValue =
                         typeof transformedEmpty === 'string' || typeof transformedEmpty === 'number'
                             ? String(transformedEmpty)
-                            : MaskExpression.EMPTY_STRING;
+                            : '';
                     const displayValue = this._maskService.applyMask(
                         clearedValue,
                         this._maskService.maskExpression,
@@ -1596,7 +1577,7 @@ export class NgxMaskDirective
     private _insertNumpadDecimalMarker(e: KeyboardEvent, el: HTMLInputElement): boolean {
         const isNumpadDecimal =
             e.key === MaskExpression.NUMPAD_DECIMAL ||
-            (e.code === MaskExpression.NUMPAD_DECIMAL_CODE && e.key === MaskExpression.DOT);
+            (e.code === MaskExpression.NUMPAD_DECIMAL_CODE && e.key === '.');
         if (
             !isNumpadDecimal ||
             e.ctrlKey ||
@@ -1611,7 +1592,7 @@ export class NgxMaskDirective
         const marker = Array.isArray(configuredMarker)
             ? configuredMarker.find((item) => item !== this._maskService.thousandSeparator)
             : configuredMarker;
-        if (marker !== MaskExpression.COMMA) {
+        if (marker !== ',') {
             return false;
         }
         const start = el.selectionStart ?? el.value.length;
@@ -1761,7 +1742,7 @@ export class NgxMaskDirective
             value === null ||
             typeof value === 'undefined'
         ) {
-            if (value === null || typeof value === 'undefined' || value === '') {
+            if ((value ?? '') === '') {
                 this._maskService.currentValue = '';
                 this._maskService.previousValue = '';
             }
@@ -1806,9 +1787,7 @@ export class NgxMaskDirective
                 }
 
                 if (commaDecimal) {
-                    inputValue = inputValue
-                        .toString()
-                        .replace(MaskExpression.DOT, MaskExpression.COMMA);
+                    inputValue = inputValue.toString().replace('.', ',');
                 }
                 if (
                     this._resolvedMaskInput().startsWith(MaskExpression.SEPARATOR) &&
@@ -1854,7 +1833,7 @@ export class NgxMaskDirective
             }
             this._syncNumberValue();
 
-            if (typeof inputValue !== 'string' || value === null || typeof value === 'undefined') {
+            if (typeof inputValue !== 'string' || (value ?? null) === null) {
                 inputValue = '';
             }
 
@@ -1973,7 +1952,7 @@ export class NgxMaskDirective
      * not bounce back through the value effect and overwrite the raw `_inputValue`.
      */
     private _propagateToValueModel(value: unknown): void {
-        const stringValue = value === null || typeof value === 'undefined' ? '' : String(value);
+        const stringValue = String(value ?? '');
         this._lastPropagatedValue = stringValue;
         this._valuePropagatedByEdit = stringValue;
         untracked(() => {
@@ -2099,7 +2078,7 @@ export class NgxMaskDirective
 
     private _validateTime(value: string): ValidationErrors | null {
         const rowMaskLen: number = this._maskValue
-            .split(MaskExpression.EMPTY_STRING)
+            .split('')
             .filter((s: string) => s !== ':').length;
         if (!value) {
             return null; // Don't validate empty values to allow for optional form control
@@ -2138,7 +2117,7 @@ export class NgxMaskDirective
         const cleanValue = this._maskService.removeMask(processedValue);
         const cleanMask = this._maskService.removeMask(maskValue);
         const isPatternPrefix = cleanValue
-            .split(MaskExpression.EMPTY_STRING)
+            .split('')
             .every((character, index) =>
                 this._maskService._checkSymbolMask(character, cleanMask.charAt(index))
             );
@@ -2146,7 +2125,7 @@ export class NgxMaskDirective
             return false;
         }
         let patternCount = 0;
-        let boundaryCharacter: string = MaskExpression.EMPTY_STRING;
+        let boundaryCharacter = '';
         for (const maskCharacter of maskValue) {
             if (patternCount === cleanValue.length) {
                 boundaryCharacter = maskCharacter;
@@ -2181,7 +2160,7 @@ export class NgxMaskDirective
      */
     private _isPlainTokenMask(mask: string): boolean {
         return mask
-            .split(MaskExpression.EMPTY_STRING)
+            .split('')
             .every(
                 (symbol: string) =>
                     !!this._maskService.patterns[symbol] ||
@@ -2215,7 +2194,7 @@ export class NgxMaskDirective
             if (valueIndex === value.length) {
                 return mask
                     .slice(maskIndex)
-                    .split(MaskExpression.EMPTY_STRING)
+                    .split('')
                     .every((symbol: string) => !patterns[symbol] || !!patterns[symbol]?.optional);
             }
             if (maskIndex === mask.length) {
@@ -2255,7 +2234,7 @@ export class NgxMaskDirective
     private _setMask() {
         this._maskExpressionArray.some((mask): boolean | void => {
             const specialChart: boolean = mask
-                .split(MaskExpression.EMPTY_STRING)
+                .split('')
                 .some((char) => this._maskService.specialCharacters.includes(char));
             if (
                 (specialChart &&
@@ -2275,8 +2254,7 @@ export class NgxMaskDirective
                     return test;
                 } else {
                     const expression =
-                        this._maskExpressionArray[this._maskExpressionArray.length - 1] ??
-                        MaskExpression.EMPTY_STRING;
+                        this._maskExpressionArray[this._maskExpressionArray.length - 1] ?? '';
 
                     const maskValue = expression.includes(MaskExpression.CURLY_BRACKETS_LEFT)
                         ? this._maskService._repeatPatternSymbols(expression)
@@ -2288,7 +2266,7 @@ export class NgxMaskDirective
                 const cleanMask = this._maskService.removeMask(mask);
                 const check: boolean = this._maskService
                     .removeMask(this._inputValue)
-                    ?.split(MaskExpression.EMPTY_STRING)
+                    ?.split('')
                     .every((character, index) => {
                         const indexMask = cleanMask.charAt(index);
                         return this._maskService._checkSymbolMask(character, indexMask);
