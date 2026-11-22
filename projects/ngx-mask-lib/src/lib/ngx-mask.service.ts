@@ -159,6 +159,8 @@ export class NgxMaskService extends NgxMaskApplierService {
                 : '';
         let newInputValue = '';
         let newPosition = position;
+        // The display as edited, before showMaskTyped strips its skeleton below (#1752).
+        const editedDisplay = inputValue;
 
         // Handle hidden input or input with asterisk symbol
         if (
@@ -231,8 +233,14 @@ export class NgxMaskService extends NgxMaskApplierService {
         }
 
         // Handle just pasted input
-        if (justPasted) {
-            newInputValue = this._pastedIntoHiddenValue(inputValue) ?? inputValue;
+        // A hiddenInput edit that replaced a selection is spliced the same way: the length
+        // heuristics above only know a single deleted or inserted character.
+        const spliced =
+            justPasted || (!backspaced && this.selStart !== this.selEnd)
+                ? this._pastedIntoHiddenValue(editedDisplay)
+                : null;
+        if (justPasted || spliced) {
+            newInputValue = spliced ?? inputValue;
         }
 
         // Handle backspace with special characters

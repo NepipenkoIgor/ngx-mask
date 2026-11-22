@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { edit as editInput } from './utils/edit-harness';
 import { TestMaskComponent } from './utils/test-component.component';
 import { provideNgxMask, NgxMaskDirective } from 'ngx-mask';
 
@@ -26,22 +27,8 @@ describe('Directive: Mask (keyless edits)', () => {
 
     const input = (): HTMLInputElement => fixture.nativeElement.querySelector('input');
 
-    /** Splices `data` over the selection as the browser does, then fires `input` (and `paste` first). */
-    function edit(data: string, inputType: string): void {
-        const el = input();
-        const start = el.selectionStart ?? el.value.length;
-        const end = el.selectionEnd ?? start;
-        if (inputType === 'insertFromPaste') {
-            el.dispatchEvent(new Event('paste'));
-        }
-        el.value = el.value.slice(0, start) + data + el.value.slice(end);
-        el.setSelectionRange(start + data.length, start + data.length);
-        el.dispatchEvent(
-            new InputEvent('input', {
-                inputType,
-                data: inputType === 'insertText' ? data : null,
-            })
-        );
+    function edit(data: string, inputType: string, keydown = false): void {
+        editInput(input(), data, inputType, keydown);
         fixture.detectChanges();
     }
 

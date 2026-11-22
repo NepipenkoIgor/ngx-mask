@@ -870,7 +870,14 @@ export class NgxMaskDirective
     private _inferKeylessSelection(el: HTMLInputElement, e: InputEvent): string | null {
         const svc = this._maskService;
         const { actualValue } = svc;
-        const before = svc.hiddenInput ? svc.hiddenDisplay(actualValue) : actualValue;
+        // `actualValue` holds the typed characters only: the skeleton and suffix of a
+        // showMaskTyped display, and every character of a hiddenInput one, come from the mask.
+        const before = svc.hiddenInput
+            ? svc.hiddenDisplay(actualValue)
+            : actualValue +
+              (svc.showMaskTyped
+                  ? `${svc.prefix}${svc.maskIsShown}${svc.suffix}`.slice(actualValue.length)
+                  : '');
         const range = inferEditRange(
             before,
             el.value,
@@ -1035,6 +1042,7 @@ export class NgxMaskDirective
                     this._maskService.actualValue = '';
                 }
 
+                const editedValue = el.value;
                 let caretShift = 0;
                 let backspaceShift = false;
                 const isDeletion =
@@ -1181,18 +1189,21 @@ export class NgxMaskDirective
                     positionToApply = isBareDecimalMarker
                         ? this._getActualInputLength() + 1
                         : this._getActualInputLength();
-                    // A separator keystroke the mask rejected (display unchanged), typed past the
-                    // value into the trailing placeholders, leaves the caret where it was typed,
-                    // not at the end of the value (#1720). Typed text only: `caret - 1` is the
-                    // pre-edit caret of a single character, not of a pasted run.
-                    if (
-                        inputType === 'insertText' &&
-                        !isDeletion &&
-                        el.value === preEditValue &&
-                        this._maskValue.startsWith(MaskExpression.SEPARATOR)
-                    ) {
-                        positionToApply = caret - 1;
-                    }
+                }
+                // A keystroke the mask rejected (the edit changed the field, the display did not)
+                // leaves the caret where it was typed, not past it or at the end of the value
+                // (#1720, #1746). Typed text only: `caret - 1` is the pre-edit caret of a single
+                // character, not of a pasted run.
+                if (
+                    inputType === 'insertText' &&
+                    !isDeletion &&
+                    !this._isBulkInsertion(e) &&
+                    !overwrite &&
+                    this._maskService.selStart === this._maskService.selEnd &&
+                    el.value === preEditValue &&
+                    editedValue !== preEditValue
+                ) {
+                    positionToApply = caret - 1;
                 }
                 if (positionToApply < 0) {
                     positionToApply = 0;
