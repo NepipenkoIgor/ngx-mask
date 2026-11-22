@@ -119,7 +119,8 @@ export const separatorHandler: MaskHandlerFn = function (state, params) {
     // e.g. '1,234.56'. Only the last marker character can actually be the
     // decimal marker — treat the earlier ones as thousand separators and
     // strip them, otherwise formatting cuts the value off at the first one.
-    if (justPasted && Array.isArray(this.decimalMarker)) {
+    // #1745: a value written from the model ('1,234.5') takes the same path.
+    if ((justPasted || this.writingValue) && Array.isArray(this.decimalMarker)) {
         const markerPositions: number[] = [];
         for (let i = 0; i < processedValue.length; i++) {
             const char = processedValue[i] as string;
