@@ -20,6 +20,12 @@ export class NgxMaskService extends NgxMaskApplierService {
     // distinguish the writeValue flow from keystroke flows (#1611).
     public isInitialized = false;
     /**
+     * The raw control value `writeValue` is currently applying, `null` outside a write. The mask's
+     * own `onChange` echo is skipped when it carries exactly this value (the mask left it
+     * unchanged); an echo that differs (a normalised or re-typed value) still reaches the form.
+     */
+    public writtenValue: { value: unknown } | null = null;
+    /**
      * Set by the directive's keepCharacterPositions handling for the current edit:
      * true — the directive fully resolved the resulting display value into actualValue,
      * so applyMask must short-circuit and render actualValue as-is;
@@ -807,9 +813,15 @@ export class NgxMaskService extends NgxMaskApplierService {
      * @param inputValue the current form input value
      */
     public formControlResult(inputValue: string): void {
-        const outputTransformFn = this.outputTransformFn
-            ? this.outputTransformFn
-            : (v: unknown) => v;
+        // The echo of a write the mask left unchanged is the written model value itself: it is
+        // already in model space, so it skips the transform (which would otherwise make the model
+        // differ by when the write is applied, see `writtenValue`).
+        const outputTransformFn = (v: unknown): unknown =>
+            !this.outputTransformFn || (this.writtenValue && Object.is(this.writtenValue.value, v))
+                ? v
+                : this.outputTransformFn(
+                      v as Parameters<NonNullable<NgxMaskConfig['outputTransformFn']>>[0]
+                  );
 
         this.writingValue = false;
         this.maskChanged = false;

@@ -173,7 +173,7 @@ describe('Directive: Mask (typeFromDecimals)', () => {
         it('should emit the numeric value to the form control', () => {
             component.mask.set('separator.2');
             typeTest('573', fixture);
-            expect(component.form.value).toBe('5.73');
+            expect(component.form.value).toBe(5.73);
         });
 
         it('should stay inert for separator.0 (zero precision — regular typing behavior)', () => {

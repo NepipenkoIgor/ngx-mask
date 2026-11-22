@@ -17,6 +17,7 @@ import {
     Renderer2,
 } from '@angular/core';
 import type {
+    AbstractControl,
     ControlValueAccessor,
     FormControl,
     ValidationErrors,
@@ -24,6 +25,7 @@ import type {
 } from '@angular/forms';
 import { NgControl } from '@angular/forms';
 import { NG_VALIDATORS, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { FORM_FIELD } from '@angular/forms/signals';
 import type { FormValueControl } from '@angular/forms/signals';
 
 import type { NgxMaskConfig } from './ngx-mask.config';
@@ -195,12 +197,8 @@ export class NgxMaskDirective
      * binding echo of it (#1671). `null` = no pending propagation.
      */
     private _lastPropagatedValue: string | null = null;
-    /**
-     * The raw control value `writeValue` is currently applying, `null` outside a write. The mask's own
-     * `onChange` echo is skipped when it carries exactly this value (the mask left it unchanged);
-     * an echo that differs (a normalised or re-typed value) still reaches the form.
-     */
-    private _writtenValue: { value: unknown } | null = null;
+    /** The last non-empty value written to the control was a number (#1701). */
+    private _numberWritten = false;
     /**
      * Counts the values put into the input: each `writeValue` that reached the rendering step and
      * each user edit. A write whose masked echo makes a `valueChanges` subscriber call `setValue`
@@ -386,6 +384,7 @@ export class NgxMaskDirective
                 this._maskValue.set(resolvedMask);
                 this._maskService.maskExpression = this._maskValue();
             }
+            this._syncNumberValue();
         }
         if (specialCharacters) {
             if (Array.isArray(specialCharacters.currentValue)) {
@@ -1656,7 +1655,8 @@ export class NgxMaskDirective
      * so the control and its ancestors keep the dirty and touched state they had. In every other
      * case (a wrapper forwarding the accessor, which transforms the value or reacts to it
      * itself; Signal Forms; no control) `fn` is the contract the caller registered and is called;
-     * the nearest control then gets back the pristine and untouched state it had before the call.
+     * the control and its ancestors then get back the pristine and untouched state they had
+     * before the call.
      */
     private _emitProgrammaticValue(fn: (value: unknown) => void, value: unknown): void {
         const ngControl = this._resolveNgControl();
@@ -1670,15 +1670,49 @@ export class NgxMaskDirective
             ngControl.viewToModelUpdate(value);
             return;
         }
-        const wasPristine = ngControl ? Boolean(ngControl.pristine) : true;
-        const wasUntouched = ngControl ? Boolean(ngControl.untouched) : true;
+        // The control and its ancestors: `fn` dirties and touches the whole chain (a group is
+        // dirty as soon as one child is), while an updateOn blur/submit control only queues the
+        // dirt (`_pendingDirty`) and applies it later at blur or submit.
+        const chain: AbstractControl[] = [];
+        for (let c = control; c; c = c.parent) {
+            chain.push(c);
+        }
+        const wasPristine = chain.filter((c) => c.pristine);
+        const wasUntouched = chain.filter((c) => c.untouched);
+        // Signal Forms: the field is no AbstractControl, and its parents derive their state from it
+        // (like NgControl, FORM_FIELD resolves through NgValueAccessor, so it is looked up lazily)
+        const field = this._injector.get(FORM_FIELD, null, { self: true })?.state();
+        const fieldWasPristine = field ? !field.dirty() : false;
+        const fieldWasTouched = field ? field.touched() : false;
         fn(value);
-        if (wasPristine && ngControl?.dirty && typeof control?.markAsPristine === 'function') {
-            control.markAsPristine({ onlySelf: true });
+        if (field && fieldWasPristine && field.dirty()) {
+            // reset() drops dirty and touched without changing the value; only dirty may go
+            field.reset();
+            if (fieldWasTouched) {
+                field.markAsTouched();
+            }
         }
-        if (wasUntouched && ngControl?.touched && typeof control?.markAsUntouched === 'function') {
-            control.markAsUntouched({ onlySelf: true });
+        for (const c of wasPristine) {
+            // markAsPristine also drops the queued dirt, which `dirty` does not show yet
+            if ((c === control || c.dirty) && typeof c.markAsPristine === 'function') {
+                c.markAsPristine({ onlySelf: true });
+            }
         }
+        for (const c of wasUntouched) {
+            if (c.touched && typeof c.markAsUntouched === 'function') {
+                c.markAsUntouched({ onlySelf: true });
+            }
+        }
+    }
+
+    /**
+     * Whether the model takes numbers: a separator mask always does, any other mask only after a
+     * number was written. Derived again on every write and mask change, so a runtime mask switch
+     * emits the type a fresh mount with that mask would (#1701).
+     */
+    private _syncNumberValue(): void {
+        this._maskService.isNumberValue =
+            this._numberWritten || this._maskValue().startsWith(MaskExpression.SEPARATOR);
     }
 
     /** It writes the value in the input */
@@ -1716,6 +1750,12 @@ export class NgxMaskDirective
         }
         if (value !== null) {
             value = inputTransformFn ? inputTransformFn(value) : value;
+        }
+        // Empty writes (reset, null, '') carry no type information and keep the last one.
+        if (typeof value === 'number') {
+            this._numberWritten = true;
+        } else if (typeof value === 'string' && value !== '') {
+            this._numberWritten = false;
         }
         if (
             typeof value === 'string' ||
@@ -1813,13 +1853,8 @@ export class NgxMaskDirective
                         { injector: this._injector }
                     );
                 }
-                this._maskService.isNumberValue = true;
-            } else if (typeof inputValue === 'string' && inputValue !== '') {
-                // A concrete string write on a non-separator mask ends the numeric emission a
-                // previous numeric write switched on. Empty writes (reset, null, '') carry no
-                // type information and keep the current state.
-                this._maskService.isNumberValue = false;
             }
+            this._syncNumberValue();
 
             if (typeof inputValue !== 'string' || value === null || typeof value === 'undefined') {
                 inputValue = '';
@@ -1838,14 +1873,14 @@ export class NgxMaskDirective
 
                 // The raw control value: a boxed `{value, disable}` write never equals the plain value
                 // the mask emits, so its echo still replaces the box in the control.
-                this._writtenValue = { value: controlValue };
+                this._maskService.writtenValue = { value: controlValue };
                 let displayValue: string;
                 try {
                     displayValue = this._writeProgrammatically(() =>
                         this._maskedOrVerbatim(inputValue)
                     );
                 } finally {
-                    this._writtenValue = null;
+                    this._maskService.writtenValue = null;
                 }
                 // A nested write (setValue inside a valueChanges subscriber) already rendered its own,
                 // newer value: do not overwrite it with this stale one.
@@ -1908,7 +1943,10 @@ export class NgxMaskDirective
         this._isCvaMode.set(true);
         const originalFn = fn;
         this._maskService.onChange = this.onChange = (value: unknown) => {
-            if (!this._writtenValue || !Object.is(this._writtenValue.value, value)) {
+            if (
+                !this._maskService.writtenValue ||
+                !Object.is(this._maskService.writtenValue.value, value)
+            ) {
                 if (this._programmaticWrite) {
                     this._emitProgrammaticValue(originalFn, value);
                 } else {

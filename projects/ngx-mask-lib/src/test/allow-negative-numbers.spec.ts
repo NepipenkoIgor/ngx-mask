@@ -28,7 +28,7 @@ describe('Directive: Mask (Allow negative numbers)', () => {
         component.dropSpecialCharacters.set(true);
         equal('-10,000.00', '10,000.00', fixture);
 
-        expect(component.form.value).equal('10000.00');
+        expect(component.form.value).equal(10000);
 
         component.form.setValue(-123456);
         equal('-123456.00', '123,456.00', fixture);

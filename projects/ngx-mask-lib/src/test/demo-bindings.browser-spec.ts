@@ -51,8 +51,8 @@ describe('Demo bindings: every option the demo binds, in a real browser', () => 
             );
             await m.type('#masked', '123456');
             await expect.poll(() => m.get('#masked').value).toBe('$1234.56');
-            // the write under the separator mask made the model numeric (see below)
-            expect(m.component.form.value).toBe(123456);
+            // no number was written and the new mask is no separator mask: a string (see below)
+            expect(m.component.form.value).toBe('123456');
         });
 
         it('separator.2 with "." thousands -> default thousands: 1234.56 gives "1 234.56"', async () => {
@@ -65,28 +65,27 @@ describe('Demo bindings: every option the demo binds, in a real browser', () => 
             expect(m.component.form.value).toBe(1234.56);
         });
 
-        // A runtime mask change does not change the model type; the last programmatic write
-        // decides it: a number write, or any write under a separator mask, gives numbers, a
-        // non-empty string write gives strings.
-        it('separator.0 -> plain digits mask: ngModel keeps the number model of the separator write', async () => {
+        // A runtime mask change re-derives the model type from the new mask and the last write,
+        // like a fresh mount: a separator mask or a number write gives numbers, anything else strings.
+        it('separator.0 -> plain digits mask: ngModel gives a string model', async () => {
             const m = await reconfigure({ _mask: 'separator.0' }, { _mask: '0000' });
             await m.type('#ngmodel', '1234');
             await expect.poll(() => m.get('#ngmodel').value).toBe('1234');
-            await expect.poll(() => m.component.model).toBe(1234);
+            await expect.poll(() => m.component.model).toBe('1234');
         });
 
-        it('plain digits mask -> separator.0: signal form keeps a string model', async () => {
+        it('plain digits mask -> separator.0: signal form gives a number model', async () => {
             const m = await reconfigure({ _mask: '0000' }, { _mask: 'separator.0' });
             await m.type('#signal', '1234');
             await expect.poll(() => m.get('#signal').value).toBe('1 234');
-            await expect.poll(() => m.component.signalValue).toBe('1234');
+            await expect.poll(() => m.component.signalValue).toBe(1234);
         });
 
-        it('no mask -> separator.0: the form keeps a string model', async () => {
+        it('no mask -> separator.0: the form gives a number model', async () => {
             const m = await reconfigure({}, { _mask: 'separator.0' });
             await m.type('#masked', '1234');
             await expect.poll(() => m.get('#masked').value).toBe('1 234');
-            expect(m.component.form.value).toBe('1234');
+            expect(m.component.form.value).toBe(1234);
         });
 
         it('separator.2 with a number model -> percent: 12 stays a number', async () => {
@@ -130,14 +129,14 @@ describe('Demo bindings: every option the demo binds, in a real browser', () => 
             );
             await m.type('#masked', '1');
             await expect.poll(() => m.get('#masked').value).toBe('1__-___-___');
-            expect(m.component.form.value).toBe(1);
+            expect(m.component.form.value).toBe('1');
         });
 
         it('separator.0 -> date mask 0000.M0.d0: 20231215 gives 2023.12.15', async () => {
             const m = await reconfigure({ _mask: 'separator.0' }, { _mask: '0000.M0.d0' });
             await m.type('#masked', '20231215');
             await expect.poll(() => m.get('#masked').value).toBe('2023.12.15');
-            expect(m.component.form.value).toBe(20231215);
+            expect(m.component.form.value).toBe('20231215');
         });
 
         it('separator with negatives -> +7 phone mask: 125 gives +7(125) ___-____', async () => {
