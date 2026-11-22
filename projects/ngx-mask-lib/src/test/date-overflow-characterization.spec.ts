@@ -1865,12 +1865,13 @@ describe('date overflow characterization', () => {
                 });
             });
 
-            // current behaviour: a paste keeps the parent overwrite, which shifts an out-of-range day
+            // current behaviour: a paste keeps the parent overwrite, which shifts an out-of-range day;
+            // the caret sits after the pasted character and the 0 the mask prepended to it (#1703)
             it('keeps the parent overwrite for a paste', async () => {
                 const harness = await dateHarness('15062020');
                 expect(pick(await input(harness, 0, 0, '4', true))).toEqual({
                     value: '04/05/0620',
-                    caret: 10,
+                    caret: 2,
                     model: '04050620',
                 });
             });

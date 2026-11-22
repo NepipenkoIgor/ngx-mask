@@ -36,6 +36,7 @@ import {
     setUserEdit,
 } from './caret/date-overflow';
 import { resolveKeepCharacterPositions } from './caret/keep-character-positions';
+import { inferEditRange } from './caret/edit-range';
 import { NgxMaskService } from './ngx-mask.service';
 import { MaskExpression } from './ngx-mask-expression.enum';
 import {
@@ -100,6 +101,7 @@ type MirroredInput = (typeof MIRRORED_INPUTS)[number];
         '(blur)': 'onBlur($event)',
         '(click)': 'onClick($event)',
         '(keydown)': 'onKeyDown($event)',
+        '(keyup)': 'onKeyUp()',
     },
 })
 export class NgxMaskDirective
@@ -160,6 +162,12 @@ export class NgxMaskDirective
     private _maskValue = signal<string>('');
     private _inputValue = signal<string>('');
     private _code = signal<string>('');
+    /**
+     * Whether a keydown preceded the input event being handled: only then do the key code and
+     * the selection it recorded describe that edit. IME, dictation, autofill and
+     * `execCommand('insertText')` fire none, so they must not inherit the previous key's.
+     */
+    private _keydownPending = false;
     private _maskExpressionArray = signal<string[]>([]);
     private _justPasted = signal<boolean>(false);
     /** For IME composition event */
@@ -826,6 +834,23 @@ export class NgxMaskDirective
     }
 
     /**
+     * The index in the masked `display` right after the entered characters `typed` (what stood
+     * before the caret). They are matched in order, so characters the mask prepended to them
+     * (a lead zero) end up before the caret, not after it.
+     */
+    private _caretAfterTyped(display: string, typed: string): number {
+        let index = this._maskService.prefix.length;
+        for (const char of typed) {
+            const found = display.indexOf(char, index);
+            if (found === -1) {
+                break;
+            }
+            index = found + 1;
+        }
+        return index;
+    }
+
+    /**
      * Whether nothing the user entered follows the caret, i.e. the edit ended the value. Only
      * the suffix and the untouched skeleton of a showMaskTyped / keepCharacterPositions field
      * (special and placeholder characters) may still follow it.
@@ -834,10 +859,36 @@ export class NgxMaskDirective
         return !this._maskService.removeMask(el.value.slice(el.selectionEnd ?? el.value.length));
     }
 
+    /**
+     * An edit without a keydown has no recorded selection (the one kept is a previous key's).
+     * It is read off the edit itself: the part of the display the inserted run replaced. Returns
+     * the display before the edit, or null when the edit does not fit it and the recorded
+     * selection stays.
+     */
+    private _inferKeylessSelection(el: HTMLInputElement, e: InputEvent): string | null {
+        const svc = this._maskService;
+        const { actualValue } = svc;
+        const before = svc.hiddenInput ? svc.hiddenDisplay(actualValue) : actualValue;
+        const range = inferEditRange(
+            before,
+            el.value,
+            el.selectionStart ?? el.value.length,
+            typeof e.data === 'string' ? e.data.length : null
+        );
+        if (!range) {
+            return null;
+        }
+        svc.selStart = range.start;
+        svc.selEnd = range.end;
+        return before;
+    }
+
     private _processInput(e: Event): void {
         this._maskService.isInitialized = true;
         // The value the keydown of this edit saw; `_inputValue` is overwritten with the edited one below.
-        const preEditValue = this._inputValue();
+        let preEditValue = this._inputValue();
+        const hadKeydown = this._keydownPending;
+        this._keydownPending = false;
         // Android IMEs report every keydown as key 'Unidentified' / keyCode 229, so a
         // backspace is undetectable from keydown alone and all _code()-based deletion
         // branches misfire (cursor jumps, "stuck" backspace — #1497). The input event's
@@ -849,11 +900,13 @@ export class NgxMaskDirective
             this._code.set(MaskExpression.DELETE);
         } else if (
             inputType &&
-            (this._code() === MaskExpression.BACKSPACE || this._code() === MaskExpression.DELETE)
+            (!hadKeydown ||
+                this._code() === MaskExpression.BACKSPACE ||
+                this._code() === MaskExpression.DELETE)
         ) {
             // A non-delete edit that produced no meaningful keydown (IME insertion,
-            // context-menu paste): clear the stale deletion code so the edit is not
-            // processed as a backspace.
+            // context-menu paste, dictation, insertText): drop the previous key's code so the
+            // edit is not processed as that key (a backspace most of all).
             this._code.set(inputType);
         }
         // If IME is composing text, we wait for the composed text — but only when the mask
@@ -865,6 +918,10 @@ export class NgxMaskDirective
             return;
         }
         const el: HTMLInputElement = (e as InputEvent).target as HTMLInputElement;
+
+        if (!hadKeydown && typeof inputType === 'string') {
+            preEditValue = this._inferKeylessSelection(el, e as InputEvent) ?? preEditValue;
+        }
 
         const transformedValue = this._maskService.inputTransformFn
             ? this._maskService.inputTransformFn(el.value)
@@ -913,6 +970,14 @@ export class NgxMaskDirective
 
                 const caret = el.selectionStart as number;
                 let position: number = this._caretAfterPrefix(el);
+                // A paste into the middle of a fixed mask: the applier's paste caret is the end of
+                // the pasted value, so the caret is placed after what came before it instead.
+                const typedBeforeCaret =
+                    this._justPasted() &&
+                    !this._maskValue().startsWith(MaskExpression.SEPARATOR) &&
+                    !this._editEndsValue(el)
+                        ? this._maskService.removeMask(el.value.slice(0, caret))
+                        : null;
 
                 if (
                     this._maskService.keepCharacterPositions &&
@@ -1070,6 +1135,9 @@ export class NgxMaskDirective
                 ) {
                     positionToApply += this._maskService.prefix.length;
                 }
+                if (typedBeforeCaret !== null) {
+                    positionToApply = this._caretAfterTyped(el.value, typedBeforeCaret);
+                }
                 if (positionToApply > this._getActualInputLength()) {
                     // A bare decimal marker ('.' or, with a prefix, '$.') is not a number:
                     // formControlResult has just emitted null for it, which the ngModelChange
@@ -1168,6 +1236,7 @@ export class NgxMaskDirective
     }
 
     public onBlur(e: Event): void {
+        this._keydownPending = false;
         if (this._maskValue()) {
             const el: HTMLInputElement = (e as FocusEvent).target as HTMLInputElement;
             if (this._applyDefaultValueOnBlur(el)) {
@@ -1319,11 +1388,16 @@ export class NgxMaskDirective
         }
     }
 
+    public onKeyUp(): void {
+        this._keydownPending = false;
+    }
+
     public onKeyDown(event: Event): void {
         const e = event as KeyboardEvent;
         if (!this._maskValue()) {
             return;
         }
+        this._keydownPending = true;
 
         if (this._isComposing()) {
             // User finalize their choice from IME composition, so trigger onInput() for the composed text.
