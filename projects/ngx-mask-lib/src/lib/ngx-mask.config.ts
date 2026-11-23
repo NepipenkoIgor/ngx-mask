@@ -101,47 +101,47 @@ export const initialConfig: NgxMaskConfig = {
     defaultValueOnBlur: null,
     patterns: {
         '0': {
-            pattern: new RegExp('\\d'),
+            pattern: /\d/,
         },
         '9': {
-            pattern: new RegExp('\\d'),
+            pattern: /\d/,
             optional: true,
         },
         X: {
-            pattern: new RegExp('\\d'),
+            pattern: /\d/,
             symbol: '*',
         },
         A: {
-            pattern: new RegExp('[a-zA-Z0-9]'),
+            pattern: /[a-zA-Z0-9]/,
         },
         S: {
-            pattern: new RegExp('[a-zA-Z]'),
+            pattern: /[a-zA-Z]/,
         },
         U: {
-            pattern: new RegExp('[A-Z]'),
+            pattern: /[A-Z]/,
         },
         L: {
-            pattern: new RegExp('[a-z]'),
+            pattern: /[a-z]/,
         },
         d: {
-            pattern: new RegExp('\\d'),
+            pattern: /\d/,
             symbol: '*',
         },
         m: {
-            pattern: new RegExp('\\d'),
+            pattern: /\d/,
         },
         M: {
-            pattern: new RegExp('\\d'),
+            pattern: /\d/,
             symbol: '*',
         },
         H: {
-            pattern: new RegExp('\\d'),
+            pattern: /\d/,
         },
         h: {
-            pattern: new RegExp('\\d'),
+            pattern: /\d/,
         },
         s: {
-            pattern: new RegExp('\\d'),
+            pattern: /\d/,
         },
     },
 };
