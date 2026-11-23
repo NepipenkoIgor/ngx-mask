@@ -127,4 +127,59 @@ describe('Directive: Mask (bulk insertion)', () => {
         expect(el.value).toBe('15/06/2020');
         expect(component.form.value).toBe('15062020');
     });
+
+    /** The display and model after `run` is typed one character at a time, and after it is inserted at once. */
+    async function typedVersusBulk(
+        initial: string,
+        caret: number,
+        run: string
+    ): Promise<{ typed: string[]; bulk: string[] }> {
+        let el = await dateField(initial, caret);
+        for (const char of run) {
+            insertText(char);
+        }
+        const typed = [el.value, String(component.form.value)];
+        el = await dateField(initial, caret);
+        insertText(run);
+        return { typed, bulk: [el.value, String(component.form.value)] };
+    }
+
+    it('types a bulk insert whose first digit overflows its field like single keystrokes (#1759)', async () => {
+        for (const run of ['4062020', '2062020', '4122020', '31122020', '0122020', '2112020']) {
+            const { typed, bulk } = await typedVersusBulk('', 0, run);
+            expect(bulk, run).toEqual(typed);
+        }
+        expect((await typedVersusBulk('', 0, '4062020')).bulk).toEqual(['4/06/2020', '4062020']);
+        expect((await typedVersusBulk('', 0, '2062020')).bulk).toEqual(['20/6/2020', '2062020']);
+    });
+
+    it('types a bulk insert into a complete date past a shrinking day like keystrokes (#1759)', async () => {
+        for (const [initial, caret, run] of [
+            ['15062020', 0, '462020'],
+            ['15062020', 3, '22'],
+            ['15062020', 3, '2'],
+        ] as const) {
+            const { typed, bulk } = await typedVersusBulk(initial, caret, run);
+            expect(bulk, `${initial}@${caret}+${run}`).toEqual(typed);
+        }
+    });
+
+    it('applies a run inserted in the middle of a keepCharacterPositions date over the next slots (#1758)', async () => {
+        let el = await dateField('15062020', 6, true);
+        insertText('19');
+        expect(el.value).toBe('15/06/1920');
+        expect(component.form.value).toBe('15061920');
+
+        // across a separator, as the same keys typed one by one
+        el = await dateField('15062020', 4, true);
+        insertText('19');
+        expect(el.value).toBe('15/01/9020');
+        expect(component.form.value).toBe('15019020');
+
+        // out of range: the whole run is rejected
+        el = await dateField('15062020', 3, true);
+        insertText('13');
+        expect(el.value).toBe('15/06/2020');
+        expect(component.form.value).toBe('15062020');
+    });
 });

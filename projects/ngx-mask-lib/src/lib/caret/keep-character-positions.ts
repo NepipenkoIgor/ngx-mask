@@ -277,3 +277,42 @@ export function resolveKeepCharacterPositions(
     }
     return { actualValue, position, handled };
 }
+
+/**
+ * A run of characters inserted at once at a caret (`insertText`, no keydown) lands as the same
+ * characters typed one by one, each over the next fillable slot. Like a pasted date (#1748), the
+ * whole run is rejected when one of its characters is: the display stays as it was. `edit` is the
+ * edit of the whole run; without a run, or over a selection, it resolves as a single edit.
+ */
+export function resolveKeepCharacterPositionsRun(
+    svc: KeepCharacterPositionsState,
+    edit: KeepCharacterPositionsEdit,
+    run: string | null
+): KeepCharacterPositionsResult {
+    if (
+        !run ||
+        svc.selStart !== svc.selEnd ||
+        edit.elValue.length - run.length !== edit.before.length
+    ) {
+        return resolveKeepCharacterPositions(svc, edit);
+    }
+    const start = edit.position - run.length;
+    let display = edit.before;
+    let caret = start;
+    let result: KeepCharacterPositionsResult | null = null;
+    for (const char of run) {
+        result = resolveKeepCharacterPositions(svc, {
+            ...edit,
+            elValue: display.slice(0, caret) + char + display.slice(caret),
+            position: caret + 1,
+            before: display,
+        });
+        // A rejected character leaves the caret where it was.
+        if (!result.handled || result.actualValue === null || result.position <= caret) {
+            return { actualValue: null, position: start, handled: true };
+        }
+        display = result.actualValue;
+        caret = result.position;
+    }
+    return result ?? resolveKeepCharacterPositions(svc, edit);
+}

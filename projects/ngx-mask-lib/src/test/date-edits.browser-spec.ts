@@ -110,6 +110,26 @@ describe('editing a date in a real browser', () => {
         expect(await edit(date, '12052024', 3, 5, insert('11'))).toBe('12/11/2024|5|12112024');
     });
 
+    it('types a bulk insert whose first digit overflows its field like keystrokes (#1759)', async () => {
+        const date = { mask: 'd0/M0/0000' };
+        for (const [initial, from, run] of [
+            ['', 0, '4062020'],
+            ['', 0, '2062020'],
+            ['15062020', 3, '22'],
+        ] as const) {
+            expect(await edit(date, initial, from, from, insert(run)), run).toBe(
+                await edit(date, initial, from, from, keys(run))
+            );
+        }
+        expect(await edit(date, '', 0, 0, insert('4062020'))).toBe('4/06/2020|9|4062020');
+    });
+
+    it('applies a run inserted in the middle of a keepCharacterPositions date (#1758)', async () => {
+        const kcp = { mask: 'd0/M0/0000', keepCharacterPositions: true };
+        expect(await edit(kcp, '15062020', 6, 6, insert('19'))).toBe('15/06/1920|8|15061920');
+        expect(await edit(kcp, '15062020', 3, 3, insert('13'))).toBe('15/06/2020|3|15062020');
+    });
+
     it('rejects a pasted keepCharacterPositions date with a field out of range (#1748)', async () => {
         const kcp = { mask: 'd0/M0/0000', keepCharacterPositions: true };
         expect(await pasteInto(kcp, '00062020')).toBe('|');

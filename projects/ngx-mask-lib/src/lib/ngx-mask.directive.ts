@@ -38,7 +38,7 @@ import {
     overwriteFullDateValue,
     setUserEdit,
 } from './caret/date-overflow';
-import { resolveKeepCharacterPositions } from './caret/keep-character-positions';
+import { resolveKeepCharacterPositionsRun } from './caret/keep-character-positions';
 import { inferEditRange } from './caret/edit-range';
 import { NgxMaskService } from './ngx-mask.service';
 import { MaskExpression } from './ngx-mask-expression.enum';
@@ -1003,17 +1003,23 @@ export class NgxMaskDirective
                     return;
                 }
 
+                // Several characters inserted at once are typed one by one (#1747, #1758).
+                const run = this._isBulkInsertion(e) ? (e as InputEvent).data : null;
                 if (
                     this._maskService.keepCharacterPositions &&
                     this._maskService.placeHolderCharacter.length === 1 &&
                     !this._justPasted
                 ) {
-                    const kcp = resolveKeepCharacterPositions(this._maskService, {
-                        elValue: el.value,
-                        position,
-                        code: this._code,
-                        before: preEditValue,
-                    });
+                    const kcp = resolveKeepCharacterPositionsRun(
+                        this._maskService,
+                        {
+                            elValue: el.value,
+                            position,
+                            code: this._code,
+                            before: preEditValue,
+                        },
+                        run
+                    );
                     if (kcp.actualValue !== null) {
                         this._maskService.actualValue = kcp.actualValue;
                     }
@@ -1058,8 +1064,6 @@ export class NgxMaskDirective
                     this._maskService.suffix ||
                     this._maskService.keepCharacterPositions ||
                     this._maskService.hiddenInput;
-                // Several characters inserted at once are typed one by one (#1747).
-                const run = this._isBulkInsertion(e) ? (e as InputEvent).data : null;
                 const overwrite =
                     keepsFullDateOverwrite || isDeletion
                         ? null

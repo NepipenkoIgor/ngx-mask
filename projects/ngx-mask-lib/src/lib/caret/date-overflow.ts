@@ -284,11 +284,21 @@ export function overwriteDateRun(
     }
     let display = before;
     let result: DateOverwrite | null = null;
-    for (const char of run) {
+    for (const [i, char] of [...run].entries()) {
         const typed = display.slice(0, from) + char + display.slice(to);
         result = overwriteDateSlot(svc, display, typed, from + 1);
         if (!result) {
-            return null;
+            // A character that shrank the display (a lone `4` day) leaves no full date to overwrite:
+            // the rest of the run is typed into it as regular masking, as keystrokes would be.
+            if (!i) {
+                return null;
+            }
+            const rest = run.slice(i);
+            return {
+                value: display.slice(0, from) + rest + display.slice(to),
+                position: from + rest.length,
+                end: from + rest.length,
+            };
         }
         display = result.value;
         from = to = result.position;
