@@ -1,5 +1,12 @@
 # Changelog
 
+## [22.3.2](https://github.com/NepipenkoIgor/ngx-mask/compare/v22.3.1...v22.3.2) (2026-11-23)
+
+
+### Fix
+
+* **mask:** apply bulk date and kcp inserts like typed keystrokes ([#1764](https://github.com/NepipenkoIgor/ngx-mask/issues/1764)) ([1c84820](https://github.com/NepipenkoIgor/ngx-mask/commit/1c84820fc29bf04dd0b28c8bd02ce0255cd946e9))
+
 ## [22.3.1](https://github.com/NepipenkoIgor/ngx-mask/compare/v22.3.0...v22.3.1) (2026-11-22)
 
 
