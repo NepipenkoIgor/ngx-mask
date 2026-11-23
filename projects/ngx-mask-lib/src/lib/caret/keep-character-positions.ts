@@ -280,39 +280,47 @@ export function resolveKeepCharacterPositions(
 
 /**
  * A run of characters inserted at once at a caret (`insertText`, no keydown) lands as the same
- * characters typed one by one, each over the next fillable slot. Like a pasted date (#1748), the
- * whole run is rejected when one of its characters is: the display stays as it was. `edit` is the
- * edit of the whole run; without a run, or over a selection, it resolves as a single edit.
+ * characters typed one by one, each over the next fillable slot: the first replaces a selection,
+ * a character the mask refuses is skipped, and a run that outgrows the display is clipped. `edit`
+ * is the edit of the whole run; without a run it resolves as a single edit.
  */
 export function resolveKeepCharacterPositionsRun(
     svc: KeepCharacterPositionsState,
     edit: KeepCharacterPositionsEdit,
     run: string | null
 ): KeepCharacterPositionsResult {
-    if (
-        !run ||
-        svc.selStart !== svc.selEnd ||
-        edit.elValue.length - run.length !== edit.before.length
-    ) {
+    const selected = Number(svc.selEnd) - Number(svc.selStart);
+    if (!run || edit.elValue.length - run.length !== edit.before.length - selected) {
         return resolveKeepCharacterPositions(svc, edit);
     }
     const start = edit.position - run.length;
-    let display = edit.before;
-    let caret = start;
-    let result: KeepCharacterPositionsResult | null = null;
+    const caretOnly = Object.create(svc, { selEnd: { value: svc.selStart } });
+    let result: KeepCharacterPositionsResult = {
+        actualValue: edit.before,
+        position: start,
+        handled: true,
+    };
+    let first = true;
     for (const char of run) {
-        result = resolveKeepCharacterPositions(svc, {
+        const display = result.actualValue as string;
+        const caret = result.position;
+        const next = resolveKeepCharacterPositions(first ? svc : caretOnly, {
             ...edit,
-            elValue: display.slice(0, caret) + char + display.slice(caret),
+            elValue:
+                display.slice(0, caret) +
+                char +
+                (first ? edit.elValue.slice(edit.position) : display.slice(caret)),
             position: caret + 1,
             before: display,
         });
-        // A rejected character leaves the caret where it was.
-        if (!result.handled || result.actualValue === null || result.position <= caret) {
-            return { actualValue: null, position: start, handled: true };
+        first = false;
+        if (!next.handled) {
+            // Past the end of the display: nothing applied yet means regular masking of the
+            // whole edit (an append), else the rest of the run is clipped.
+            return caret === start ? { ...next, position: edit.position } : result;
         }
-        display = result.actualValue;
-        caret = result.position;
+        // A rejected character leaves the caret where it was: it is skipped.
+        result = next.position > caret ? next : result;
     }
-    return result ?? resolveKeepCharacterPositions(svc, edit);
+    return result;
 }

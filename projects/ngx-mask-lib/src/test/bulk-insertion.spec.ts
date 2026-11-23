@@ -182,4 +182,75 @@ describe('Directive: Mask (bulk insertion)', () => {
         expect(el.value).toBe('15/06/2020');
         expect(component.form.value).toBe('15062020');
     });
+
+    /** A keepCharacterPositions field of `mask` holding `value`, `[start, end]` selected. */
+    async function kcpField(mask: string, value: string, start: number, end: number) {
+        component.mask.set(mask);
+        component.keepCharacterPositions.set(true);
+        fixture.detectChanges();
+        component.form.setValue(value);
+        fixture.detectChanges();
+        await fixture.whenStable();
+        const el = input();
+        el.focus();
+        el.setSelectionRange(start, end);
+        return el;
+    }
+
+    /** Display, model and caret after `run` is typed one key at a time, and after it is inserted at once. */
+    async function kcpTypedVersusBulk(
+        mask: string,
+        value: string,
+        sel: [number, number],
+        run: string
+    ) {
+        let el = await kcpField(mask, value, ...sel);
+        for (const char of run) {
+            insertText(char);
+        }
+        const typed = [el.value, String(component.form.value), el.selectionStart];
+        el = await kcpField(mask, value, ...sel);
+        insertText(run);
+        return { typed, bulk: [el.value, String(component.form.value), el.selectionStart] };
+    }
+
+    it('replaces a selection with a whole run on keepCharacterPositions like keystrokes (#1765 a)', async () => {
+        for (const [value, sel, run] of [
+            ['123456', [1, 3], '99'],
+            ['123456', [0, 2], '789'],
+            ['123456', [2, 5], '9'],
+        ] as const) {
+            const { typed, bulk } = await kcpTypedVersusBulk('000-000', value, [...sel], run);
+            expect(bulk, `${value}@${sel.join(',')}+${run}`).toEqual(typed);
+        }
+        expect((await kcpTypedVersusBulk('000-000', '123456', [1, 3], '99')).bulk[0]).toBe(
+            '199-456'
+        );
+    });
+
+    it('types a run that reaches the end of a keepCharacterPositions value like keystrokes (#1765 b)', async () => {
+        for (const [value, caret, run] of [
+            ['', 0, '1234'],
+            ['12', 2, '345'],
+            ['123456', 4, '99'],
+        ] as const) {
+            const { typed, bulk } = await kcpTypedVersusBulk('000-000', value, [caret, caret], run);
+            expect(bulk, `${value}@${caret}+${run}`).toEqual(typed);
+        }
+    });
+
+    it('skips refused characters and clips a run past the end on keepCharacterPositions (#1765 c)', async () => {
+        for (const [value, caret, run] of [
+            ['123456', 0, '9a9'],
+            ['123456', 1, '9ab'],
+            ['123456', 5, '99'],
+            ['123456', 3, '7777'],
+        ] as const) {
+            const { typed, bulk } = await kcpTypedVersusBulk('000-000', value, [caret, caret], run);
+            expect(bulk, `${value}@${caret}+${run}`).toEqual(typed);
+        }
+        expect((await kcpTypedVersusBulk('000-000', '123456', [0, 0], '9a9')).bulk[0]).toBe(
+            '993-456'
+        );
+    });
 });

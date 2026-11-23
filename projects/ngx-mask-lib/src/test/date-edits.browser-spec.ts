@@ -137,4 +137,23 @@ describe('editing a date in a real browser', () => {
         expect(await pasteInto(kcp, '15062020')).toBe('15/06/2020|15062020');
         expect(await pasteInto({ ...kcp, showMaskTyped: true }, '00062020')).toBe('__/__/____|');
     });
+
+    it('types a keepCharacterPositions run like keystrokes: over a selection, to the end, skipping refusals (#1765)', async () => {
+        const kcp = { mask: '000-000', keepCharacterPositions: true };
+        for (const [initial, from, to, run] of [
+            ['123456', 1, 3, '99'],
+            ['123456', 0, 2, '789'],
+            ['', 0, 0, '1234'],
+            ['12', 2, 2, '345'],
+            ['123456', 0, 0, '9a9'],
+            ['123456', 5, 5, '99'],
+            ['123456', 3, 3, '7777'],
+        ] as const) {
+            expect(
+                await edit(kcp, initial, from, to, insert(run)),
+                `${initial}@${from}-${to}+${run}`
+            ).toBe(await edit(kcp, initial, from, to, keys(run)));
+        }
+        expect(await edit(kcp, '123456', 1, 3, insert('99'))).toBe('199-456|3|199456');
+    });
 });
