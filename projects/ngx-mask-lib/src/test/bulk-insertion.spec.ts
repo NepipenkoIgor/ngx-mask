@@ -127,4 +127,173 @@ describe('Directive: Mask (bulk insertion)', () => {
         expect(el.value).toBe('15/06/2020');
         expect(component.form.value).toBe('15062020');
     });
+
+    /** The display and model after `run` is typed one character at a time, and after it is inserted at once. */
+    async function typedVersusBulk(
+        initial: string,
+        caret: number,
+        run: string
+    ): Promise<{ typed: string[]; bulk: string[] }> {
+        let el = await dateField(initial, caret);
+        for (const char of run) {
+            insertText(char);
+        }
+        const typed = [el.value, String(component.form.value)];
+        el = await dateField(initial, caret);
+        insertText(run);
+        return { typed, bulk: [el.value, String(component.form.value)] };
+    }
+
+    it('types a bulk insert whose first digit overflows its field like single keystrokes (#1759)', async () => {
+        for (const run of ['4062020', '2062020', '4122020', '31122020', '0122020', '2112020']) {
+            const { typed, bulk } = await typedVersusBulk('', 0, run);
+            expect(bulk, run).toEqual(typed);
+        }
+        expect((await typedVersusBulk('', 0, '4062020')).bulk).toEqual(['4/06/2020', '4062020']);
+        expect((await typedVersusBulk('', 0, '2062020')).bulk).toEqual(['20/6/2020', '2062020']);
+    });
+
+    it('types a bulk insert into a complete date past a shrinking day like keystrokes (#1759)', async () => {
+        for (const [initial, caret, run] of [
+            ['15062020', 0, '462020'],
+            ['15062020', 3, '22'],
+            ['15062020', 3, '2'],
+        ] as const) {
+            const { typed, bulk } = await typedVersusBulk(initial, caret, run);
+            expect(bulk, `${initial}@${caret}+${run}`).toEqual(typed);
+        }
+    });
+
+    it('applies a run inserted in the middle of a keepCharacterPositions date over the next slots (#1758)', async () => {
+        let el = await dateField('15062020', 6, true);
+        insertText('19');
+        expect(el.value).toBe('15/06/1920');
+        expect(component.form.value).toBe('15061920');
+
+        // across a separator, as the same keys typed one by one
+        el = await dateField('15062020', 4, true);
+        insertText('19');
+        expect(el.value).toBe('15/01/9020');
+        expect(component.form.value).toBe('15019020');
+
+        // out of range at the end of the value: the whole run is rejected (isPasteOutOfRange);
+        // a run in the middle skips only the characters the mask refuses
+        el = await dateField('15062020', 3, true);
+        insertText('13');
+        expect(el.value).toBe('15/06/2020');
+        expect(component.form.value).toBe('15062020');
+    });
+
+    /** A keepCharacterPositions field of `mask` holding `value`, `[start, end]` selected. */
+    async function kcpField(
+        mask: string,
+        value: string,
+        start: number,
+        end: number,
+        affixes: { prefix?: string; suffix?: string; showMaskTyped?: boolean } = {}
+    ) {
+        component.mask.set(mask);
+        component.prefix.set(affixes.prefix ?? '');
+        component.suffix.set(affixes.suffix ?? '');
+        component.showMaskTyped.set(affixes.showMaskTyped ?? false);
+        component.keepCharacterPositions.set(true);
+        fixture.detectChanges();
+        component.form.setValue(value);
+        fixture.detectChanges();
+        await fixture.whenStable();
+        const el = input();
+        el.focus();
+        el.setSelectionRange(start, end);
+        return el;
+    }
+
+    /** Display, model and caret after `run` is typed one key at a time, and after it is inserted at once. */
+    async function kcpTypedVersusBulk(
+        mask: string,
+        value: string,
+        sel: [number, number],
+        run: string,
+        affixes: { prefix?: string; suffix?: string; showMaskTyped?: boolean } = {}
+    ) {
+        let el = await kcpField(mask, value, sel[0], sel[1], affixes);
+        for (const char of run) {
+            insertText(char);
+        }
+        const typed = [el.value, String(component.form.value), el.selectionStart];
+        el = await kcpField(mask, value, sel[0], sel[1], affixes);
+        insertText(run);
+        return { typed, bulk: [el.value, String(component.form.value), el.selectionStart] };
+    }
+
+    it('replaces a selection with a whole run on keepCharacterPositions like keystrokes (#1765 a)', async () => {
+        for (const [value, sel, run] of [
+            ['123456', [1, 3], '99'],
+            ['123456', [0, 2], '789'],
+            ['123456', [2, 5], '9'],
+        ] as const) {
+            const { typed, bulk } = await kcpTypedVersusBulk('000-000', value, [...sel], run);
+            expect(bulk, `${value}@${sel.join(',')}+${run}`).toEqual(typed);
+        }
+        expect((await kcpTypedVersusBulk('000-000', '123456', [1, 3], '99')).bulk[0]).toBe(
+            '199-456'
+        );
+    });
+
+    it('types a run that reaches the end of a keepCharacterPositions value like keystrokes (#1765 b)', async () => {
+        for (const [value, caret, run] of [
+            ['', 0, '1234'],
+            ['12', 2, '345'],
+            ['123456', 4, '99'],
+        ] as const) {
+            const { typed, bulk } = await kcpTypedVersusBulk('000-000', value, [caret, caret], run);
+            expect(bulk, `${value}@${caret}+${run}`).toEqual(typed);
+        }
+    });
+
+    it('skips refused characters and clips a run past the end on keepCharacterPositions (#1765 c)', async () => {
+        for (const [value, caret, run] of [
+            ['123456', 0, '9a9'],
+            ['123456', 1, '9ab'],
+            ['123456', 5, '99'],
+            ['123456', 3, '7777'],
+        ] as const) {
+            const { typed, bulk } = await kcpTypedVersusBulk('000-000', value, [caret, caret], run);
+            expect(bulk, `${value}@${caret}+${run}`).toEqual(typed);
+        }
+        expect((await kcpTypedVersusBulk('000-000', '123456', [0, 0], '9a9')).bulk[0]).toBe(
+            '993-456'
+        );
+    });
+
+    it('types a run on keepCharacterPositions next to a prefix and a suffix like keystrokes', async () => {
+        for (const [affixes, value, sel, run] of [
+            [{ prefix: '$', showMaskTyped: true }, '1234', [1, 1], '99'],
+            [{ prefix: '$', showMaskTyped: true }, '1234', [2, 4], '99'],
+            [{ prefix: '$', showMaskTyped: true }, '', [1, 1], '123456'],
+            [{ prefix: '$', suffix: ' kg', showMaskTyped: true }, '1234', [2, 2], '99'],
+            [{ prefix: '$', suffix: ' kg', showMaskTyped: true }, '1234', [1, 3], '9a9'],
+            [{ suffix: ' kg', showMaskTyped: true }, '1234', [1, 1], '99'],
+            [{ prefix: '$', suffix: ' kg' }, '1234', [2, 2], '99'],
+        ] as const) {
+            const { typed, bulk } = await kcpTypedVersusBulk(
+                '0000.00',
+                value,
+                [...sel],
+                run,
+                affixes
+            );
+            expect(bulk, `${JSON.stringify(affixes)} ${value}@${sel.join(',')}+${run}`).toEqual(
+                typed
+            );
+        }
+    });
+
+    it('masks a run inserted before the prefix of an empty keepCharacterPositions field as a paste', async () => {
+        const affixes = { prefix: '$', showMaskTyped: true };
+        const el = await kcpField('0000.00', '', 0, 0, affixes);
+        insertText('123456');
+        expect(el.value).toBe('$1234.56');
+        expect(component.form.value).toBe('123456');
+        expect(el.selectionStart).toBe(8);
+    });
 });

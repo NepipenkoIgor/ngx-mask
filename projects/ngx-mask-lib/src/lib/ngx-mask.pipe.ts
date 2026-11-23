@@ -75,16 +75,6 @@ export class NgxMaskPipe implements PipeTransform {
         }
 
         if (resolvedMask.startsWith(MaskExpression.SEPARATOR)) {
-            if (config.decimalMarker) {
-                this._maskService.decimalMarker = config.decimalMarker;
-            }
-            if (config.thousandSeparator) {
-                this._maskService.thousandSeparator = config.thousandSeparator;
-            }
-            if (config.leadZero) {
-                this._maskService.leadZero = config.leadZero;
-            }
-
             processedValue = String(processedValue);
             const localeDecimalMarker = this._maskService.currentLocaleDecimalMarker();
 

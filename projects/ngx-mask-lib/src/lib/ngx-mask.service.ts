@@ -907,9 +907,7 @@ export class NgxMaskService extends NgxMaskApplierService {
     }
 
     private _retrieveSeparatorPrecision(maskExpression: string): number | null {
-        const matcher: RegExpMatchArray | null = maskExpression.match(
-            new RegExp(`^separator\\.([^d]*)`)
-        );
+        const matcher: RegExpMatchArray | null = maskExpression.match(/^separator\.([^d]*)/);
         return matcher ? Number(matcher[1]) : null;
     }
 

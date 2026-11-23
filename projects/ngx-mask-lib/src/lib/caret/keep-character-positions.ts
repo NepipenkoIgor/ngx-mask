@@ -277,3 +277,55 @@ export function resolveKeepCharacterPositions(
     }
     return { actualValue, position, handled };
 }
+
+/**
+ * A run of characters inserted at once at a caret (`insertText`, no keydown) lands as the same
+ * characters typed one by one, each over the next fillable slot: the first replaces a selection,
+ * a character the mask refuses is skipped, and a run that outgrows the display is clipped. `edit`
+ * is the edit of the whole run; without a run it resolves as a single edit.
+ */
+export function resolveKeepCharacterPositionsRun(
+    svc: KeepCharacterPositionsState,
+    edit: KeepCharacterPositionsEdit,
+    run: string | null
+): KeepCharacterPositionsResult {
+    const selected = Number(svc.selEnd) - Number(svc.selStart);
+    if (!run || edit.elValue.length - run.length !== edit.before.length - selected) {
+        return resolveKeepCharacterPositions(svc, edit);
+    }
+    const start = edit.position - run.length;
+    if (start < svc.prefix.length) {
+        // A run inserted before the prefix is no keystroke (a key there is rejected): it is
+        // masked as a paste, which puts it after the prefix.
+        return { actualValue: null, position: edit.position, handled: false };
+    }
+    const caretOnly = Object.create(svc, { selEnd: { value: svc.selStart } });
+    let result: KeepCharacterPositionsResult = {
+        actualValue: edit.before,
+        position: start,
+        handled: true,
+    };
+    let first = true;
+    for (const char of run) {
+        const display = result.actualValue as string;
+        const caret = result.position;
+        const next = resolveKeepCharacterPositions(first ? svc : caretOnly, {
+            ...edit,
+            elValue:
+                display.slice(0, caret) +
+                char +
+                (first ? edit.elValue.slice(edit.position) : display.slice(caret)),
+            position: caret + 1,
+            before: display,
+        });
+        first = false;
+        if (!next.handled) {
+            // Past the end of the display: nothing applied yet means regular masking of the
+            // whole edit (an append), else the rest of the run is clipped.
+            return caret === start ? { ...next, position: edit.position } : result;
+        }
+        // A rejected character leaves the caret where it was: it is skipped.
+        result = next.position > caret ? next : result;
+    }
+    return result;
+}
