@@ -24,6 +24,7 @@
         "@commitlint/config-conventional": "21.2.4",
         "@eslint/js": "10.0.1",
         "@eslint/json": "2.1.1",
+        "@size-limit/esbuild": "14.3.0",
         "@size-limit/file": "14.3.0",
         "@tailwindcss/postcss": "4.3.5",
         "@types/node": "26.6.6",
@@ -514,6 +515,8 @@
     "@simple-libs/child-process-utils": ["@simple-libs/child-process-utils@2.0.0", "", { "dependencies": { "@simple-libs/stream-utils": "^2.0.0" } }, "sha512-dvNoRKLijXnD0XoJAz94pbNuB5GQgDr55UhpSPhffDkTT0Cmcqh9jSCOtwfT2d4H6MI9E7c4SgtMuJXZ6F3c6A=="],
 
     "@simple-libs/stream-utils": ["@simple-libs/stream-utils@2.0.0", "", {}, "sha512-fCTuZK4QBa+39Oz9l4OGfJfz+GpwCp3AqO7Zch3to99xHPgstVsRFpeQ8LNd2o1Gv8raL2mCFwiaHh7bFSp5DQ=="],
+
+    "@size-limit/esbuild": ["@size-limit/esbuild@14.3.0", "", { "dependencies": { "esbuild": "^0.28.2" }, "peerDependencies": { "size-limit": "14.3.0" } }, "sha512-0HvGvD5vw2j/lZ7u+koacP5UpveaFVirc8Gm0GJRfICDd+4xEpZX3ManDSnFzwlk7qe0JtJjE8d5jp5t8sUlEQ=="],
 
     "@size-limit/file": ["@size-limit/file@14.3.0", "", { "peerDependencies": { "size-limit": "14.3.0" } }, "sha512-GWKOi0rorXPbYmwbT926Z91t28rg5gd5hv8ywY1FNcaYf8NbibgK5K5YabYbLkV6KpGwuuixBRtIzl3ZpPzUfw=="],
 

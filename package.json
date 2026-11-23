@@ -21,17 +21,34 @@
     "private": true,
     "size-limit": [
         {
-            "name": "ngx-mask fesm",
+            "name": "ngx-mask fesm (gzip)",
             "path": "dist/ngx-mask-lib/fesm2022/ngx-mask.mjs",
+            "disablePlugins": [
+                "@size-limit/esbuild"
+            ],
             "gzip": true,
-            "limit": "28.5 kB"
+            "limit": "28.3 kB"
+        },
+        {
+            "name": "ngx-mask fesm (minified)",
+            "path": "dist/ngx-mask-lib/fesm2022/ngx-mask.mjs",
+            "ignore": [
+                "@angular/core",
+                "@angular/common",
+                "@angular/forms",
+                "rxjs",
+                "tslib"
+            ],
+            "gzip": false,
+            "brotli": false,
+            "limit": "77.9 kB"
         }
     ],
     "scripts": {
         "ng": "ng",
         "build": "ng build --base-href /ngx-mask/  --configuration production",
         "build:lib": "ng build --configuration production ngx-mask-lib && bun scripts/postbuild-lib.mjs",
-        "size": "size-limit",
+        "size": "node -e \"if(!process.versions.zlib.startsWith('1.3'))console.warn('size: zlib '+process.versions.zlib+' differs from CI; numbers run ~110 B low')\" && size-limit",
         "ci": "bun run lint && bun run build:lib && bun run size && bun run test:all && bun run build",
         "lint:scss": "stylelint \"**/*.scss\"",
         "lint:scss:fix": "stylelint \"**/*.scss\" --fix",
@@ -72,6 +89,7 @@
         "@commitlint/config-conventional": "21.2.4",
         "@eslint/js": "10.0.1",
         "@eslint/json": "2.1.1",
+        "@size-limit/esbuild": "14.3.0",
         "@size-limit/file": "14.3.0",
         "@tailwindcss/postcss": "4.3.5",
         "@types/node": "26.6.6",
