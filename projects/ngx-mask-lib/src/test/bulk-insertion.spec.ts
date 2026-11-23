@@ -176,7 +176,8 @@ describe('Directive: Mask (bulk insertion)', () => {
         expect(el.value).toBe('15/01/9020');
         expect(component.form.value).toBe('15019020');
 
-        // out of range: the whole run is rejected
+        // out of range at the end of the value: the whole run is rejected (isPasteOutOfRange);
+        // a run in the middle skips only the characters the mask refuses
         el = await dateField('15062020', 3, true);
         insertText('13');
         expect(el.value).toBe('15/06/2020');
@@ -184,8 +185,17 @@ describe('Directive: Mask (bulk insertion)', () => {
     });
 
     /** A keepCharacterPositions field of `mask` holding `value`, `[start, end]` selected. */
-    async function kcpField(mask: string, value: string, start: number, end: number) {
+    async function kcpField(
+        mask: string,
+        value: string,
+        start: number,
+        end: number,
+        affixes: { prefix?: string; suffix?: string; showMaskTyped?: boolean } = {}
+    ) {
         component.mask.set(mask);
+        component.prefix.set(affixes.prefix ?? '');
+        component.suffix.set(affixes.suffix ?? '');
+        component.showMaskTyped.set(affixes.showMaskTyped ?? false);
         component.keepCharacterPositions.set(true);
         fixture.detectChanges();
         component.form.setValue(value);
@@ -202,14 +212,15 @@ describe('Directive: Mask (bulk insertion)', () => {
         mask: string,
         value: string,
         sel: [number, number],
-        run: string
+        run: string,
+        affixes: { prefix?: string; suffix?: string; showMaskTyped?: boolean } = {}
     ) {
-        let el = await kcpField(mask, value, ...sel);
+        let el = await kcpField(mask, value, sel[0], sel[1], affixes);
         for (const char of run) {
             insertText(char);
         }
         const typed = [el.value, String(component.form.value), el.selectionStart];
-        el = await kcpField(mask, value, ...sel);
+        el = await kcpField(mask, value, sel[0], sel[1], affixes);
         insertText(run);
         return { typed, bulk: [el.value, String(component.form.value), el.selectionStart] };
     }
@@ -252,5 +263,37 @@ describe('Directive: Mask (bulk insertion)', () => {
         expect((await kcpTypedVersusBulk('000-000', '123456', [0, 0], '9a9')).bulk[0]).toBe(
             '993-456'
         );
+    });
+
+    it('types a run on keepCharacterPositions next to a prefix and a suffix like keystrokes', async () => {
+        for (const [affixes, value, sel, run] of [
+            [{ prefix: '$', showMaskTyped: true }, '1234', [1, 1], '99'],
+            [{ prefix: '$', showMaskTyped: true }, '1234', [2, 4], '99'],
+            [{ prefix: '$', showMaskTyped: true }, '', [1, 1], '123456'],
+            [{ prefix: '$', suffix: ' kg', showMaskTyped: true }, '1234', [2, 2], '99'],
+            [{ prefix: '$', suffix: ' kg', showMaskTyped: true }, '1234', [1, 3], '9a9'],
+            [{ suffix: ' kg', showMaskTyped: true }, '1234', [1, 1], '99'],
+            [{ prefix: '$', suffix: ' kg' }, '1234', [2, 2], '99'],
+        ] as const) {
+            const { typed, bulk } = await kcpTypedVersusBulk(
+                '0000.00',
+                value,
+                [...sel],
+                run,
+                affixes
+            );
+            expect(bulk, `${JSON.stringify(affixes)} ${value}@${sel.join(',')}+${run}`).toEqual(
+                typed
+            );
+        }
+    });
+
+    it('masks a run inserted before the prefix of an empty keepCharacterPositions field as a paste', async () => {
+        const affixes = { prefix: '$', showMaskTyped: true };
+        const el = await kcpField('0000.00', '', 0, 0, affixes);
+        insertText('123456');
+        expect(el.value).toBe('$1234.56');
+        expect(component.form.value).toBe('123456');
+        expect(el.selectionStart).toBe(8);
     });
 });

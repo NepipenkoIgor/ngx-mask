@@ -137,4 +137,20 @@ describe('keepCharacterPositions with a prefix or a suffix in a real browser', (
             expect(out.model).toBe('123');
         }
     });
+
+    it('masks a run inserted before the prefix of an empty field as a paste', async () => {
+        const m = await mount(MaskHarnessComponent, {
+            mask: '0000.00',
+            prefix: '$',
+            keepCharacterPositions: true,
+            showMaskTyped: true,
+        });
+        const field = m.get('#masked');
+        field.focus();
+        field.setSelectionRange(0, 0);
+        document.execCommand('insertText', false, '123456');
+        await m.settle();
+        expect(field.value).toBe('$1234.56');
+        expect(field.selectionStart).toBe(8);
+    });
 });

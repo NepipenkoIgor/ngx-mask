@@ -294,6 +294,11 @@ export function resolveKeepCharacterPositionsRun(
         return resolveKeepCharacterPositions(svc, edit);
     }
     const start = edit.position - run.length;
+    if (start < svc.prefix.length) {
+        // A run inserted before the prefix is no keystroke (a key there is rejected): it is
+        // masked as a paste, which puts it after the prefix.
+        return { actualValue: null, position: edit.position, handled: false };
+    }
     const caretOnly = Object.create(svc, { selEnd: { value: svc.selStart } });
     let result: KeepCharacterPositionsResult = {
         actualValue: edit.before,
